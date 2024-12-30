@@ -1,0 +1,19 @@
+Index: .idea/modules/app/App.app.iml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/modules/app/App.app.iml b/.idea/modules/app/App.app.iml
+new file mode 100644
+--- /dev/null	(date 1732536274123)
++++ b/.idea/modules/app/App.app.iml	(date 1732536274123)
+@@ -0,0 +1,8 @@
++<?xml version="1.0" encoding="UTF-8"?>
++<module version="4">
++  <component name="ModuleClassLoaderOverlays">
++    <paths>
++      <option value="C:\Users\ORB\AppData\Local\Temp\overlay7125724003006948504" />
++    </paths>
++  </component>
++</module>
+\ No newline at end of file

@@ -1,0 +1,17 @@
+Index: app/src/main/java/com/example/app/ui/components/screens/ReservingScreen.kt
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/app/src/main/java/com/example/app/ui/components/screens/ReservingScreen.kt b/app/src/main/java/com/example/app/ui/components/screens/ReservingScreen.kt
+--- a/app/src/main/java/com/example/app/ui/components/screens/ReservingScreen.kt	
++++ b/app/src/main/java/com/example/app/ui/components/screens/ReservingScreen.kt	(date 1732641402893)
+@@ -42,7 +42,7 @@
+     } else {
+         foodAmount!!
+     }
+-    val testPrice = 
++    val testPrice = 0
+ 
+     Box(
+         modifier = modifier.fillMaxSize(),
