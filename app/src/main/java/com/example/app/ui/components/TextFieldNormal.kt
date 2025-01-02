@@ -40,6 +40,7 @@ import com.example.app.ui.theme.RobotoFontFamily
 @Composable
 fun TextFieldNormal(
     modifier: Modifier = Modifier,
+    textValue: MutableState<String>,
     labelValue: String
 ) {
     Card(
@@ -56,7 +57,10 @@ fun TextFieldNormal(
             containerColor = Color.Transparent
         )
     ) {
-        MyTextField(placeholder = labelValue)
+        MyTextField(
+            placeholder = labelValue,
+            textValue = textValue
+        )
     }
 }
 
@@ -65,9 +69,9 @@ fun TextFieldNormal(
 fun MyTextField(
     modifier: Modifier = Modifier,
     placeholder: String,
+    textValue: MutableState<String>,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default
 ) {
-    val textValue = remember { mutableStateOf("") }
 
     BasicTextField(
         value = textValue.value,
@@ -87,6 +91,93 @@ fun MyTextField(
         decorationBox = { innerTextField ->
             Box {
                 if (textValue.value.isEmpty()) {
+                    Text(
+                        text = placeholder,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                innerTextField()
+            }
+        },
+        keyboardOptions = keyboardOptions
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MyIntTextField(
+    modifier: Modifier = Modifier,
+    placeholder: String,
+    textValue: MutableState<Int>,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default
+) {
+
+    BasicTextField(
+        value = if (textValue.value == 0) {
+            ""
+        } else {
+            textValue.value.toString()
+        },
+        onValueChange = {
+            textValue.value = it.toIntOrNull() ?: 0
+        },
+        textStyle = TextStyle(
+            color = MaterialTheme.colorScheme.onBackground,
+            fontFamily = RobotoFontFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp
+        ),
+        maxLines = 1,
+        cursorBrush = SolidColor(
+            MaterialTheme.colorScheme.onBackground
+        ),
+        decorationBox = { innerTextField ->
+            Box {
+                if (textValue.value <= 0) {
+                    Text(
+                        text = placeholder,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                }
+                innerTextField()
+            }
+        },
+        keyboardOptions = keyboardOptions
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MyNullableTextField(
+    modifier: Modifier = Modifier,
+    placeholder: String,
+    textValue: String,
+    onValueChange: (String) -> Unit,
+    keyboardOptions: KeyboardOptions = KeyboardOptions.Default
+) {
+
+    BasicTextField(
+        value = textValue,
+        onValueChange = onValueChange,
+        textStyle = TextStyle(
+            color = MaterialTheme.colorScheme.onBackground,
+            fontFamily = RobotoFontFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp
+        ),
+        maxLines = 1,
+        cursorBrush = SolidColor(
+            MaterialTheme.colorScheme.onBackground
+        ),
+        decorationBox = { innerTextField ->
+            Box {
+                if (textValue.isEmpty()) {
                     Text(
                         text = placeholder,
                         style = MaterialTheme.typography.bodyMedium,

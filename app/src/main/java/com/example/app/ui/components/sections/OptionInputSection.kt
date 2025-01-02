@@ -207,7 +207,7 @@ fun OptionModeSwitch(
     }
     val onRemoveClicked: () -> Unit = {
         selectedItemsInBox.forEachIndexed { index, item ->
-            mergedItemsContainers[item.mergeGroup]!!.removeAt(index + 1)
+            mergedItemsContainers[item.mergeGroup]!!.removeAt(index)
             selectedItemsInBox.remove(item)
 //            filteredItems.toMutableList().add(item)
         }
