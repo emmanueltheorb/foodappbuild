@@ -234,15 +234,10 @@ fun createNumberList(
 @Composable
 fun OptionWithoutAmount(
     modifier: Modifier = Modifier,
-    options: MutableList<OptionState>
+    option: OptionState
 ) {
-    var optionState: OptionState? = null
-    for (option in options) {
-        if (option.amount == null && option.mergeGroup == null) {
-            optionState = option
-        }
-    }
-    var priceView = optionState!!.price
+    var optionState: OptionState = option
+    var priceView = optionState.price
 
 
     Row(
@@ -260,16 +255,11 @@ fun OptionWithoutAmount(
 @Composable
 fun OptionWithAmount(
     modifier: Modifier = Modifier,
-    options: MutableList<OptionState>
+    option: OptionState
 ) {
-    var optionState: OptionState? = null
-    for (option in options) {
-        if (option.amount != null && option.mergeGroup == null) {
-            optionState = option
-        }
-    }
-    var amountView by remember { mutableIntStateOf(optionState!!.amount!!) }
-    val lowerLimit = optionState!!.lowerLimit!!
+    var optionState: OptionState = option
+    var amountView by remember { mutableIntStateOf(optionState.amount!!) }
+    val lowerLimit = optionState.lowerLimit!!
     val upperLimit = optionState.upperLimit!!
     var priceView = optionState.price
     var price0 = priceView * amountView
@@ -337,12 +327,12 @@ fun NotMergedOptions(
     for (option in options) {
         if (option.mergeGroup == null && option.amount == null) {
             OptionWithoutAmount(
-                options = options
+                option = option
             )
         } else {
             if (option.mergeGroup == null) {
                 OptionWithAmount(
-                    options = options
+                    option = option
                 )
             }
         }

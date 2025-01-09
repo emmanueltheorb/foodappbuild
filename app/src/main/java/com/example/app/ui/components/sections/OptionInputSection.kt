@@ -32,6 +32,7 @@ import androidx.compose.material3.CardColors
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Surface
@@ -154,6 +155,7 @@ fun OptionModeSwitch(
     val optionList = optionStateViewModel.getOptionStates()
     var signal by remember { mutableIntStateOf(1) }
     var signalForPopUp by remember { mutableIntStateOf(1) }
+    var signalForAddIcon by remember { mutableStateOf(false) }
     val onAddClicked = {
         signal = 1
     }
@@ -191,6 +193,9 @@ fun OptionModeSwitch(
         } else {
             signalForPopUp = 1
         }
+        if (it.isNotEmpty()) {
+            signalForAddIcon = true
+        }
     }
     val onSelectedItemsInBox: (List<OptionState>) -> Unit = {
 
@@ -212,6 +217,13 @@ fun OptionModeSwitch(
 //            filteredItems.toMutableList().add(item)
         }
         state.isMultiSelectionModeEnabled = !state.isMultiSelectionModeEnabled
+    }
+    val onAddIconClicked: (Int) -> Unit = { groupId ->
+        if (selectedItems.isNotEmpty()) {
+            selectedItems.forEach { item ->
+                mergedItemsContainers[groupId]!!.add(item)
+            }
+        }
     }
 
     if (signal == 1) {
@@ -237,7 +249,9 @@ fun OptionModeSwitch(
             onSelectedItems = onSelectedItems,
             onSelectedItemsInBox = onSelectedItemsInBox,
             onAddClicked = onAddClicked,
-            onRightClicked = onRightClicked
+            onRightClicked = onRightClicked,
+            signalForAddIcon = signalForAddIcon,
+            onAddIconClicked = onAddIconClicked
         )
     }
     if (signal == 3) {
@@ -349,6 +363,8 @@ fun OptionsInMultiSelectionList(
     state: MultiSelectionState,
     optionList: List<OptionState>,
     mergeGroupNumber: Int,
+    signalForAddIcon: Boolean,
+    onAddIconClicked: (Int) -> Unit,
     onMergeClicked: () -> Unit,
     onRemoveClicked: () -> Unit,
     signal: Int,
@@ -394,7 +410,9 @@ fun OptionsInMultiSelectionList(
                     mergedItems = mergedItems,
                     state = state,
                     selectedItemsInBox = selectedItemsInBox,
-                    onSelectedItemsInBox = onSelectedItemsInBox
+                    onSelectedItemsInBox = onSelectedItemsInBox,
+                    signalForAddIcon = signalForAddIcon,
+                    onAddIconClicked = onAddIconClicked,
                 )
             }
             MultiSelectionList(
@@ -436,70 +454,135 @@ fun OptionsInMultiSelectionList(
 fun MergeBox(
     modifier: Modifier = Modifier,
     mergeGroupNumber: Int,
+    signalForAddIcon: Boolean,
+    onAddIconClicked: (Int) -> Unit,
     selectedItemsInBox: SnapshotStateList<OptionState>,
     onSelectedItemsInBox: (List<OptionState>) -> Unit,
     mergedItems: MutableList<OptionState>,
     state: MultiSelectionState,
 ) {
-    MergedGroup(
-        state = state,
-        items = mergedItems,
-        selectedItems = selectedItemsInBox,
-        key = {
-            it.id
-        },
-        onSelectedItems = onSelectedItemsInBox,
-        itemContent = {
-            if (it.amount == null) {
-                Row(
-                    modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceAround,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = it.name,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    Spacer(modifier.width(82.dp))
-                    Text(
-                        text = "₦${it.price}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-            } else {
-                Row(
-                    modifier
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceAround,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = it.name,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                    AmountInfo(option = it)
-                    Text(
-                        text = "₦${it.price}",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onBackground
-                    )
-                }
-            }
-        },
-        onClick = {
-            if (state.isMultiSelectionModeEnabled) {
-                if (selectedItemsInBox.contains(it)) {
-                    selectedItemsInBox.remove(it)
-                } else {
-                    selectedItemsInBox.add(it)
-                }
-            }
+    Column(
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        if (signalForAddIcon == true) {
+            PopUpAddButton(
+                onAddIconClicked = onAddIconClicked,
+                mergeGroupNumber = mergeGroupNumber
+            )
         }
-    )
+        Spacer(Modifier.height(4.dp))
+        MergedGroup(
+            state = state,
+            items = mergedItems,
+            selectedItems = selectedItemsInBox,
+            key = {
+                it.id
+            },
+            onSelectedItems = onSelectedItemsInBox,
+            itemContent = {
+                if (it.amount == null) {
+                    Row(
+                        modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceAround,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = it.name,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        Spacer(modifier.width(82.dp))
+                        Text(
+                            text = "₦${it.price}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                } else {
+                    Row(
+                        modifier
+                            .fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceAround,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = it.name,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        AmountInfo(option = it)
+                        Text(
+                            text = "₦${it.price}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                }
+            },
+            onClick = {
+                if (state.isMultiSelectionModeEnabled) {
+                    if (selectedItemsInBox.contains(it)) {
+                        selectedItemsInBox.remove(it)
+                    } else {
+                        selectedItemsInBox.add(it)
+                    }
+                }
+            }
+        )
+    }
+}
+
+@Composable
+fun PopUpAddButton(
+    modifier: Modifier = Modifier,
+    onAddIconClicked: (Int) -> Unit,
+    mergeGroupNumber: Int
+) {
+    Row(
+        modifier.padding(end = 7.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Spacer(modifier.weight(1f))
+        MyIconButton2(
+            icon = R.drawable.ic_plus,
+            onClicked = onAddIconClicked,
+            mergeGroupNumber = mergeGroupNumber
+        )
+    }
+}
+
+@Composable
+fun MyIconButton2(
+    modifier: Modifier = Modifier,
+    @DrawableRes icon: Int,
+    containerColor: Color = MaterialTheme.colorScheme.surface,
+    onClicked: (Int) -> Unit,
+    mergeGroupNumber: Int
+) {
+    Surface(
+        modifier = modifier
+            .size(24.dp)
+            .clickable{
+                onClicked.invoke(mergeGroupNumber)
+            },
+        shape = CircleShape,
+        color = containerColor,
+        contentColor = MaterialTheme.colorScheme.onSurface
+    ) {
+        Box(
+            modifier = modifier
+                .fillMaxSize()
+                .padding(5.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                painter = painterResource(icon),
+                contentDescription = null
+            )
+        }
+    }
 }
 
 @Composable

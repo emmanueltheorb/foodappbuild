@@ -6,7 +6,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 
-class OptionStateViewModel: ViewModel() {
+class OptionStateViewModel : ViewModel() {
     val optionInputs = SnapshotStateList<OptionStateInput>()
 
     init {
