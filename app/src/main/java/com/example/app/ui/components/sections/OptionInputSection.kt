@@ -38,6 +38,7 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -46,8 +47,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.snapshots.SnapshotStateMap
+import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -152,7 +155,7 @@ fun OptionModeSwitch(
 ) {
     val state = rememberMultiSelectionState()
     val optionInputs = optionStateViewModel.optionInputs
-    val optionList = optionStateViewModel.getOptionStates()
+    val optionList = optionStateViewModel.getOptionStates().toMutableStateList()
     var signal by remember { mutableIntStateOf(1) }
     var signalForPopUp by remember { mutableIntStateOf(1) }
     var signalForAddIcon by remember { mutableStateOf(false) }
@@ -180,13 +183,11 @@ fun OptionModeSwitch(
     val selectedItemsInBox = remember {
         mutableStateListOf<OptionState>()
     }
-    val mergedItemsContainers = remember {
-        mutableStateMapOf<Int, MutableList<OptionState>>()
-    }
-    val filteredItems = optionList.filter {
-        it !in mergedItemsContainers.values.flatten()
-    }
+    val mergedItemsContainers = optionStateViewModel.mergedItemsContainers
+    var filteredItems by remember { mutableStateOf(optionList.toList()) }
     var mergeGroupNumber by remember { mutableIntStateOf(0) }
+    var mergedItems by remember { mutableStateOf(emptyList<OptionState>()) }
+
     val onSelectedItems: (List<OptionState>) -> Unit = {
         if (it.size >= 2 || selectedItemsInBox.isNotEmpty()) {
             signalForPopUp = 2
@@ -201,66 +202,82 @@ fun OptionModeSwitch(
 
     }
     val onMergeClicked: () -> Unit = {
-        mergedItemsContainers[mergeGroupNumber] = selectedItems.toMutableList()
-        selectedItems.forEachIndexed{ index, item ->
-            optionInputs[item.id].mergeGroup.value = mergeGroupNumber
-            optionInputs[item.id].mergeId.value = index
-        }
+        optionStateViewModel.addToMergeGroup(mergeGroupNumber, selectedItems)
         selectedItems.clear()
         mergeGroupNumber++
         state.isMultiSelectionModeEnabled = !state.isMultiSelectionModeEnabled
     }
     val onRemoveClicked: () -> Unit = {
         selectedItemsInBox.forEachIndexed { index, item ->
-            mergedItemsContainers[item.mergeGroup]!!.removeAt(index)
-            selectedItemsInBox.remove(item)
-//            filteredItems.toMutableList().add(item)
+            optionStateViewModel.removeFromMergeGroup(mergeGroupNumber - 1, listOf(item))
         }
+        selectedItemsInBox.clear()
         state.isMultiSelectionModeEnabled = !state.isMultiSelectionModeEnabled
     }
     val onAddIconClicked: (Int) -> Unit = { groupId ->
         if (selectedItems.isNotEmpty()) {
-            selectedItems.forEach { item ->
-                mergedItemsContainers[groupId]!!.add(item)
-            }
+            optionStateViewModel.addToMergeGroup(mergeGroupNumber - 1, selectedItems)
+    }
+    selectedItems.clear()
+    state.isMultiSelectionModeEnabled = !state.isMultiSelectionModeEnabled
+}
+//    LaunchedEffect(optionList, mergedItemsContainers) {
+//        snapshotFlow {
+//            Pair(optionList.toList(), mergedItemsContainers.flatMap { it.value })
+//        }.collect { (updatedOptionList, updatedMergedContainer) ->
+//            mergedItems = updatedMergedContainer
+//            filteredItems = updatedOptionList.filterNot {
+//                it in mergedItems
+//            }
+//        }
+//    }
+
+LaunchedEffect(mergedItemsContainers) {
+    snapshotFlow {
+        mergedItemsContainers.flatMap { it.value }
+    }.collect { updatedMergedContainer ->
+        mergedItems = updatedMergedContainer
+        filteredItems = optionList.filterNot {
+            it in mergedItems
         }
     }
+}
 
-    if (signal == 1) {
-        OptionsInput(
-            onIncreaseButtonClicked = onIncreaseButtonClicked,
-            onDecreaseButtonClicked = onDecreaseButtonClicked,
-            onTickClicked = onTickClicked,
-            optionInputs = optionInputs
-        )
-    }
-    if (signal == 2) {
-        OptionsInMultiSelectionList(
-            optionList = optionList,
-            state = state,
-            mergeGroupNumber = mergeGroupNumber,
-            signal = signalForPopUp,
-            onMergeClicked = onMergeClicked,
-            onRemoveClicked = onRemoveClicked,
-            selectedItems = selectedItems,
-            selectedItemsInBox = selectedItemsInBox,
-            mergedItemsContainers = mergedItemsContainers,
-            filteredItems = filteredItems,
-            onSelectedItems = onSelectedItems,
-            onSelectedItemsInBox = onSelectedItemsInBox,
-            onAddClicked = onAddClicked,
-            onRightClicked = onRightClicked,
-            signalForAddIcon = signalForAddIcon,
-            onAddIconClicked = onAddIconClicked
-        )
-    }
-    if (signal == 3) {
-        OptionsPreviewSection(
-            options = optionList,
-            onAddClicked = onAddClicked,
-            onEditClicked = onEditClicked
-        )
-    }
+if (signal == 1) {
+    OptionsInput(
+        onIncreaseButtonClicked = onIncreaseButtonClicked,
+        onDecreaseButtonClicked = onDecreaseButtonClicked,
+        onTickClicked = onTickClicked,
+        optionInputs = optionInputs
+    )
+}
+if (signal == 2) {
+    OptionsInMultiSelectionList(
+        optionList = optionList,
+        state = state,
+        mergeGroupNumber = mergeGroupNumber,
+        signal = signalForPopUp,
+        onMergeClicked = onMergeClicked,
+        onRemoveClicked = onRemoveClicked,
+        selectedItems = selectedItems,
+        selectedItemsInBox = selectedItemsInBox,
+        mergedItemsContainers = mergedItemsContainers,
+        filteredItems = filteredItems,
+        onSelectedItems = onSelectedItems,
+        onSelectedItemsInBox = onSelectedItemsInBox,
+        onAddClicked = onAddClicked,
+        onRightClicked = onRightClicked,
+        signalForAddIcon = signalForAddIcon,
+        onAddIconClicked = onAddIconClicked
+    )
+}
+if (signal == 3) {
+    OptionsPreviewSection(
+        options = optionList,
+        onAddClicked = onAddClicked,
+        onEditClicked = onEditClicked
+    )
+}
 }
 
 @Composable
@@ -564,7 +581,7 @@ fun MyIconButton2(
     Surface(
         modifier = modifier
             .size(24.dp)
-            .clickable{
+            .clickable {
                 onClicked.invoke(mergeGroupNumber)
             },
         shape = CircleShape,

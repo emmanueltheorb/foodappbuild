@@ -136,7 +136,7 @@ fun MyIconButton(
 fun Surface(
     modifier: Modifier = Modifier,
     text: String,
-    width: Dp = 125.dp
+    width: Dp = 110.dp
 ) {
     OutlinedCard(
         modifier = Modifier.padding(16.dp),
@@ -168,7 +168,7 @@ fun Surface(
 fun PriceTextView(
     modifier: Modifier = Modifier,
     price: Int,
-    width: Dp = 125.dp
+    width: Dp = 110.dp
 ) {
     Surface(
         text = "₦$price",

@@ -11,6 +11,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.example.app.ui.components.DynamicItemListWithInteraction
 import com.example.app.ui.components.screens.AddFoodItemScreen
 import com.example.app.ui.components.screens.ReservingScreen
 import com.example.app.ui.components.sections.OptionCheck
@@ -38,6 +39,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     foodImage = R.drawable.pizza
                 )
+//                DynamicItemListWithInteraction()
             }
         }
     }

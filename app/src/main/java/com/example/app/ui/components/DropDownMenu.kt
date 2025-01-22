@@ -37,7 +37,7 @@ fun dropdownMenu(
     modifier: Modifier = Modifier,
     options: MutableList<OptionState>,
     mergedGroupNumber: Int,
-    width: Dp = 125.dp
+    width: Dp = 110.dp
 ): Int {
     val mergedGroupNumber = mergedGroupNumber
     var mergeIndex by remember {

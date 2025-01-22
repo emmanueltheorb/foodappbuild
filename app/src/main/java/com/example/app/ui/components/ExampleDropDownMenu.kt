@@ -26,9 +26,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -57,6 +59,24 @@ import kotlinx.coroutines.launch
 import kotlin.collections.forEach
 import kotlin.collections.plus
 import kotlin.collections.set
+
+//val mergedItemsContainers = remember {
+//    mutableStateMapOf<Int, MutableList<OptionState>>()
+//}
+//var filteredItems by remember { mutableStateOf(optionList) }
+//var mergeGroupNumber by remember { mutableIntStateOf(0) }
+//var mergedItems by remember { mutableStateOf(emptyList<OptionState>()) }
+//
+//LaunchedEffect(mergedItemsContainers) {
+//    snapshotFlow {
+//        mergedItemsContainers.values.flatten()
+//    }.collect { updatedMergedContainer ->
+//        mergedItems = updatedMergedContainer
+//        filteredItems = optionList.filterNot {
+//            it in mergedItems
+//        }
+//    }
+//}
 
 //
 //@Composable
@@ -303,7 +323,7 @@ import kotlin.collections.set
 //        val mergeId: MutableState<Int?>
 //    )
 //}
-
+//
 //class OptionStateViewModel : ViewModel() {
 //    val optionInputs = mutableStateListOf<OptionStateInput>(
 //        OptionStateInput(
@@ -427,6 +447,116 @@ import kotlin.collections.set
 //        val mergeGroup: MutableState<Int?>,
 //        val mergeId: MutableState<Int?>
 //    )
+//}
+
+//@Composable
+//fun OptionModeSwitch(
+//    modifier: Modifier = Modifier,
+//    optionStateViewModel: OptionStateViewModel = viewModel()
+//) {
+//    val state = rememberMultiSelectionState()
+//    val optionInputs = optionStateViewModel.optionInputs
+//    val optionList = optionStateViewModel.getOptionStates()
+//    var signal by remember { mutableIntStateOf(1) }
+//    var signalForPopUp by remember { mutableIntStateOf(1) }
+//    var signalForAddIcon by remember { mutableStateOf(false) }
+//    val onAddClicked = {
+//        signal = 1
+//    }
+//    val onTickClicked = {
+//        signal = 2
+//    }
+//    val onRightClicked = {
+//        signal = 3
+//    }
+//    val onEditClicked = {
+//        signal = 2
+//    }
+//    val onIncreaseButtonClicked: () -> Unit = {
+//        optionStateViewModel.addNewOptionInput()
+//    }
+//    val onDecreaseButtonClicked: () -> Unit = {
+//        optionStateViewModel.optionInputs.removeAt(optionInputs.size - 1)
+//    }
+//    val selectedItems = remember {
+//        mutableStateListOf<OptionState>()
+//    }
+//    val selectedItemsInBox = remember {
+//        mutableStateListOf<OptionState>()
+//    }
+//    val mergedItemsContainers by optionStateViewModel.mergedItemsContainers.collectAsState()
+//    val filteredItems by optionStateViewModel.filteredItems.collectAsState()
+//    var mergeGroupNumber by remember { mutableIntStateOf(0) }
+//    val onSelectedItems: (List<OptionState>) -> Unit = {
+//        if (it.size >= 2 || selectedItemsInBox.isNotEmpty()) {
+//            signalForPopUp = 2
+//        } else {
+//            signalForPopUp = 1
+//        }
+//        if (it.isNotEmpty()) {
+//            signalForAddIcon = true
+//        }
+//    }
+//    val onSelectedItemsInBox: (List<OptionState>) -> Unit = {
+//
+//    }
+//    val onMergeClicked: () -> Unit = {
+//        optionStateViewModel.addToMergeGroup(mergeGroupNumber, selectedItems)
+//        selectedItems.clear()
+//        mergeGroupNumber++
+//        state.isMultiSelectionModeEnabled = !state.isMultiSelectionModeEnabled
+//    }
+//    val onRemoveClicked: () -> Unit = {
+//        selectedItemsInBox.forEachIndexed { index, item ->
+//            optionStateViewModel.removeFromMergeGroup(mergeGroupNumber - 1, listOf(item))
+//        }
+//        selectedItemsInBox.clear()
+//        state.isMultiSelectionModeEnabled = !state.isMultiSelectionModeEnabled
+//    }
+//    val onAddIconClicked: (Int) -> Unit = { groupId ->
+//        if (selectedItems.isNotEmpty()) {
+//            selectedItems.forEach { item ->
+//                optionStateViewModel.addToMergeGroup(mergeGroupNumber - 1, listOf(item))
+//            }
+//        }
+//        selectedItems.clear()
+//    }
+//
+//    if (signal == 1) {
+//        OptionsInput(
+//            onIncreaseButtonClicked = onIncreaseButtonClicked,
+//            onDecreaseButtonClicked = onDecreaseButtonClicked,
+//            onTickClicked = onTickClicked,
+//            optionInputs = optionInputs
+//        )
+//    }
+//    if (signal == 2) {
+//        OptionsInMultiSelectionList(
+//            optionList = optionList,
+//            state = state,
+//            mergeGroupNumber = mergeGroupNumber,
+//            signal = signalForPopUp,
+//            onMergeClicked = onMergeClicked,
+//            onRemoveClicked = onRemoveClicked,
+//            selectedItems = selectedItems,
+//            selectedItemsInBox = selectedItemsInBox,
+//            mergedItemsContainers = mergedItemsContainers,
+//            filteredItems = filteredItems,
+//            onSelectedItems = onSelectedItems,
+//            onSelectedItemsInBox = onSelectedItemsInBox,
+//            onAddClicked = onAddClicked,
+//            onRightClicked = onRightClicked,
+//            signalForAddIcon = signalForAddIcon,
+//            onAddIconClicked = onAddIconClicked
+//        )
+//    }
+//    if (signal == 3) {
+//        OptionsPreviewSection(
+//            options = optionList,
+//            onAddClicked = onAddClicked,
+//            onEditClicked = onEditClicked
+//        )
+//    }
 //}
 
 @Composable
