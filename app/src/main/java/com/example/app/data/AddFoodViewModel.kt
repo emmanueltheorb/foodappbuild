@@ -64,7 +64,6 @@ class AddFoodViewModel : ViewModel() {
             amount = mutableStateOf(foodItem.amount),
             options = mutableStateOf(foodItem.options)
         )
-
 //        foodList[foodItem.id] = foodItemInput
         foodList.add(foodItemInput)
 
