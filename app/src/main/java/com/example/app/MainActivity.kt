@@ -13,6 +13,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.example.app.ui.components.DynamicItemListWithInteraction
 import com.example.app.ui.components.screens.AddFoodItemScreen
+import com.example.app.ui.components.screens.AvailableFoodsScreen
 import com.example.app.ui.components.screens.ReservingScreen
 import com.example.app.ui.components.sections.OptionCheck
 import com.example.app.ui.components.sections.OptionInputItem
@@ -25,7 +26,6 @@ class MainActivity : ComponentActivity() {
         setContent {
             AppTheme {
 //                    AvailableFoodsScreen(
-//                        headerText = "BMD Foods",
 //                        onSearchButtonClicked = {},
 //                        onFoodItemClicked = {}
 //                    )

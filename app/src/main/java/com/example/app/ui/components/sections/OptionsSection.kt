@@ -62,7 +62,7 @@ fun NullOptions(
 @Composable
 fun OptionsSection(
     modifier: Modifier = Modifier,
-    options: MutableList<OptionState>
+    options: List<OptionState>
 ) {
     Column(
         modifier = modifier.fillMaxSize(),
@@ -200,7 +200,7 @@ fun PriceView(
 }
 
 fun createNameList(
-    options: MutableList<OptionState>,
+    options: List<OptionState>,
     mergeGroupNumber: Int
 ): MutableList<String> {
 
@@ -216,7 +216,7 @@ fun createNameList(
 }
 
 fun createNumberList(
-    options: MutableList<OptionState>,
+    options: List<OptionState>,
     mergeGroupNumber: Int
 ): MutableList<Int> {
 
@@ -292,7 +292,7 @@ fun OptionWithAmount(
 @Composable
 fun MergedOptions(
     modifier: Modifier = Modifier,
-    options: MutableList<OptionState>
+    options: List<OptionState>
 ) {
     var price01 by remember { mutableIntStateOf(0) }
     var price02 by remember { mutableIntStateOf(0) }
@@ -322,7 +322,7 @@ fun MergedOptions(
 @Composable
 fun NotMergedOptions(
     modifier: Modifier = Modifier,
-    options: MutableList<OptionState>
+    options: List<OptionState>
 ) {
     for (option in options) {
         if (option.mergeGroup == null && option.amount == null) {
@@ -342,7 +342,7 @@ fun NotMergedOptions(
 @Composable
 fun MergedOptionsWithoutAmount(
     modifier: Modifier = Modifier,
-    options: MutableList<OptionState>,
+    options: List<OptionState>,
     mergeGroupNumber: Int
 ) {
     val numberList = createNumberList(
@@ -365,7 +365,7 @@ fun MergedOptionsWithoutAmount(
 @Composable
 fun MergedOptionsWithAmount(
     modifier: Modifier = Modifier,
-    options: MutableList<OptionState>,
+    options: List<OptionState>,
     mergeGroupNumber: Int,
     optionIndex: Int
 ) {

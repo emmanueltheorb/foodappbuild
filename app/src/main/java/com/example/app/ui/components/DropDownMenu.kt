@@ -35,7 +35,7 @@ import com.example.app.ui.components.sections.createNameList
 @Composable
 fun dropdownMenu(
     modifier: Modifier = Modifier,
-    options: MutableList<OptionState>,
+    options: List<OptionState>,
     mergedGroupNumber: Int,
     width: Dp = 110.dp
 ): Int {

@@ -11,7 +11,7 @@ data class FoodItemState(
     val price: Int,
     val availability: Boolean = true,
     val amount: Int?,
-    val options: MutableList<OptionState>?
+    val options: List<OptionState>?
 )
 
 data class OptionState(
@@ -48,7 +48,7 @@ val FoodItemsData = mutableListOf(
         foodName = "Eba and soup",
         price = 2500,
         amount = null,
-        options = mutableListOf(
+        options = listOf(
             OptionState(
                 id = 0,
                 name = "Egusi soup",
@@ -165,7 +165,7 @@ val FoodItemsData = mutableListOf(
         foodName = "Eba and stew",
         price = 2500,
         amount = null,
-        options = mutableListOf(
+        options = listOf(
             OptionState(
                 id = 0,
                 name = "Stew",
@@ -268,7 +268,7 @@ val FoodItemsData = mutableListOf(
         foodName = "Ice cream",
         price = 1500,
         amount = 25,
-        options = mutableListOf(
+        options = listOf(
             OptionState(
                 id = 0,
                 name = "Ice cream plate",

@@ -181,3 +181,37 @@ fun PopUpForMergeAndRemove(
         }
     }
 }
+
+@Composable
+fun PopUpForDelete(
+    modifier: Modifier = Modifier,
+    onDeleteClicked: () -> Unit,
+) {
+    var isVisible by remember {
+        mutableStateOf(false)
+    }
+
+    Popup(
+        alignment = Alignment.BottomCenter,
+        offset = IntOffset(0, 50),
+        onDismissRequest = { isVisible }
+    ) {
+        Surface(
+            modifier
+                .wrapContentSize()
+                .padding(5.dp),
+            shape = RoundedCornerShape(8.dp),
+            color = MaterialTheme.colorScheme.background,
+            contentColor = MaterialTheme.colorScheme.onBackground,
+            shadowElevation = 3.dp
+        ) {
+            Text(
+                text = "Delete",
+                modifier
+                    .padding(18.dp)
+                    .clickable(onClick = onDeleteClicked),
+                style = MaterialTheme.typography.bodyMedium
+            )
+        }
+    }
+}

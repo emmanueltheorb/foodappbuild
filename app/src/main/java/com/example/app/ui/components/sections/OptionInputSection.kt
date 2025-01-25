@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.wrapContentWidth
@@ -32,25 +31,18 @@ import androidx.compose.material3.CardColors
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.mutableStateMapOf
-import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.compose.runtime.snapshots.SnapshotStateMap
-import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -61,45 +53,136 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.app.R
+import com.example.app.data.AddFoodViewModel
 import com.example.app.data.OptionState
 import com.example.app.data.OptionStateViewModel
-import com.example.app.data.OptionStateViewModel.OptionStateInput
 import com.example.app.ui.components.MergedGroup
 import com.example.app.ui.components.MultiSelectionList
 import com.example.app.ui.components.MultiSelectionState
 import com.example.app.ui.components.MyTextFieldWithCallback
+import com.example.app.ui.components.PopUpForDelete
 import com.example.app.ui.components.PopUpForMergeAndRemove
-import com.example.app.ui.components.rememberMultiSelectionState
-import com.example.app.ui.theme.AppTheme
 import com.example.app.ui.theme.RobotoFontFamily
-import kotlin.collections.set
 
 @Composable
 fun OptionInputSection(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onIncreaseButtonClicked: () -> Unit,
+    onDecreaseButtonClicked: () -> Unit,
+    onTickClicked: () -> Unit,
+    optionInputs: SnapshotStateList<AddFoodViewModel.OptionStateInput>,
+    state: MultiSelectionState,
+    optionList: List<OptionState>,
+    mergeGroupNumber: Int,
+    signalForAddIcon: Boolean,
+    onAddIconClicked: (Int) -> Unit,
+    onMergeClicked: () -> Unit,
+    onRemoveClicked: () -> Unit,
+    onDeleteClicked: () -> Unit,
+    signal: Int,
+    signalForPopUp: Int,
+    selectedItems: SnapshotStateList<OptionState>,
+    selectedItemsInBox: SnapshotStateList<OptionState>,
+    mergedItemsContainers: SnapshotStateMap<Int, MutableList<OptionState>>,
+    filteredItems: List<OptionState>,
+    onSelectedItems: (List<OptionState>) -> Unit,
+    onSelectedItemsInBox: (List<OptionState>) -> Unit,
+    onAddClicked: () -> Unit,
+    onRightClicked: () -> Unit,
+    onEditClicked: () -> Unit
 ) {
-    OptionCheck()
+    OptionCheck(
+        onIncreaseButtonClicked = onIncreaseButtonClicked,
+        onDecreaseButtonClicked = onDecreaseButtonClicked,
+        onTickClicked = onTickClicked,
+        optionInputs = optionInputs,
+        state = state,
+        optionList = optionList,
+        mergeGroupNumber = mergeGroupNumber,
+        signalForAddIcon = signalForAddIcon,
+        onAddIconClicked = onAddIconClicked,
+        onMergeClicked = onMergeClicked,
+        onRemoveClicked = onRemoveClicked,
+        onDeleteClicked = onDeleteClicked,
+        signal = signal,
+        signalForPopUp = signalForPopUp,
+        selectedItems = selectedItems,
+        selectedItemsInBox = selectedItemsInBox,
+        mergedItemsContainers = mergedItemsContainers,
+        filteredItems = filteredItems,
+        onSelectedItems = onSelectedItems,
+        onSelectedItemsInBox = onSelectedItemsInBox,
+        onAddClicked = onAddClicked,
+        onRightClicked = onRightClicked,
+        onEditClicked = onEditClicked
+    )
 }
 
 @Composable
 fun OptionCheck(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onIncreaseButtonClicked: () -> Unit,
+    onDecreaseButtonClicked: () -> Unit,
+    onTickClicked: () -> Unit,
+    optionInputs: SnapshotStateList<AddFoodViewModel.OptionStateInput>,
+    state: MultiSelectionState,
+    optionList: List<OptionState>,
+    mergeGroupNumber: Int,
+    signalForAddIcon: Boolean,
+    onAddIconClicked: (Int) -> Unit,
+    onMergeClicked: () -> Unit,
+    onRemoveClicked: () -> Unit,
+    onDeleteClicked: () -> Unit,
+    signal: Int,
+    signalForPopUp: Int,
+    selectedItems: SnapshotStateList<OptionState>,
+    selectedItemsInBox: SnapshotStateList<OptionState>,
+    mergedItemsContainers: SnapshotStateMap<Int, MutableList<OptionState>>,
+    filteredItems: List<OptionState>,
+    onSelectedItems: (List<OptionState>) -> Unit,
+    onSelectedItemsInBox: (List<OptionState>) -> Unit,
+    onAddClicked: () -> Unit,
+    onRightClicked: () -> Unit,
+    onEditClicked: () -> Unit
 ) {
-    var signal by remember { mutableStateOf(false) }
+    var signal1 by remember { mutableStateOf(false) }
     val onButtonClicked = {
-        signal = true
+        signal1 = true
     }
 
-    if (signal == false) {
+    if (signal1 == false) {
         OptionCheckPrompt(onButtonClicked = onButtonClicked)
     } else {
-        OptionModeSwitch()
+        OptionModeSwitch(
+            onIncreaseButtonClicked = onIncreaseButtonClicked,
+            onDecreaseButtonClicked = onDecreaseButtonClicked,
+            onTickClicked = onTickClicked,
+            optionInputs = optionInputs,
+            state = state,
+            optionList = optionList,
+            mergeGroupNumber = mergeGroupNumber,
+            signalForAddIcon = signalForAddIcon,
+            onAddIconClicked = onAddIconClicked,
+            onMergeClicked = onMergeClicked,
+            onRemoveClicked = onRemoveClicked,
+            onDeleteClicked = onDeleteClicked,
+            signal = signal,
+            signalForPopUp = signalForPopUp,
+            selectedItems = selectedItems,
+            selectedItemsInBox = selectedItemsInBox,
+            mergedItemsContainers = mergedItemsContainers,
+            filteredItems = filteredItems,
+            onSelectedItems = onSelectedItems,
+            onSelectedItemsInBox = onSelectedItemsInBox,
+            onAddClicked = onAddClicked,
+            onRightClicked = onRightClicked,
+            onEditClicked = onEditClicked
+        )
     }
 }
 
@@ -112,6 +195,7 @@ private fun OptionCheckPrompt(
 
     Row(
         modifier = modifier
+            .padding(horizontal = 18.dp)
             .fillMaxWidth()
             .wrapContentHeight(),
         verticalAlignment = Alignment.Top,
@@ -151,133 +235,67 @@ private fun OptionCheckPrompt(
 @Composable
 fun OptionModeSwitch(
     modifier: Modifier = Modifier,
+    onIncreaseButtonClicked: () -> Unit,
+    onDecreaseButtonClicked: () -> Unit,
+    onTickClicked: () -> Unit,
+    optionInputs: SnapshotStateList<AddFoodViewModel.OptionStateInput>,
+    state: MultiSelectionState,
+    optionList: List<OptionState>,
+    mergeGroupNumber: Int,
+    signalForAddIcon: Boolean,
+    onAddIconClicked: (Int) -> Unit,
+    onMergeClicked: () -> Unit,
+    onRemoveClicked: () -> Unit,
+    onDeleteClicked: () -> Unit,
+    signal: Int,
+    signalForPopUp: Int,
+    selectedItems: SnapshotStateList<OptionState>,
+    selectedItemsInBox: SnapshotStateList<OptionState>,
+    mergedItemsContainers: SnapshotStateMap<Int, MutableList<OptionState>>,
+    filteredItems: List<OptionState>,
+    onSelectedItems: (List<OptionState>) -> Unit,
+    onSelectedItemsInBox: (List<OptionState>) -> Unit,
+    onAddClicked: () -> Unit,
+    onRightClicked: () -> Unit,
+    onEditClicked: () -> Unit,
     optionStateViewModel: OptionStateViewModel = viewModel()
 ) {
-    val state = rememberMultiSelectionState()
-    val optionInputs = optionStateViewModel.optionInputs
-    val optionList = optionStateViewModel.getOptionStates().toMutableStateList()
-    var signal by remember { mutableIntStateOf(1) }
-    var signalForPopUp by remember { mutableIntStateOf(1) }
-    var signalForAddIcon by remember { mutableStateOf(false) }
-    val onAddClicked = {
-        signal = 1
+    if (signal == 1) {
+        OptionsInput(
+            onIncreaseButtonClicked = onIncreaseButtonClicked,
+            onDecreaseButtonClicked = onDecreaseButtonClicked,
+            onTickClicked = onTickClicked,
+            optionInputs = optionInputs
+        )
     }
-    val onTickClicked = {
-        signal = 2
+    if (signal == 2) {
+        OptionsInMultiSelectionList(
+            optionList = optionList,
+            state = state,
+            mergeGroupNumber = mergeGroupNumber,
+            signalForPopUp = signalForPopUp,
+            onMergeClicked = onMergeClicked,
+            onRemoveClicked = onRemoveClicked,
+            onDeleteClicked = onDeleteClicked,
+            selectedItems = selectedItems,
+            selectedItemsInBox = selectedItemsInBox,
+            mergedItemsContainers = mergedItemsContainers,
+            filteredItems = filteredItems,
+            onSelectedItems = onSelectedItems,
+            onSelectedItemsInBox = onSelectedItemsInBox,
+            onAddClicked = onAddClicked,
+            onRightClicked = onRightClicked,
+            signalForAddIcon = signalForAddIcon,
+            onAddIconClicked = onAddIconClicked
+        )
     }
-    val onRightClicked = {
-        signal = 3
+    if (signal == 3) {
+        OptionsPreviewSection(
+            options = optionList,
+            onAddClicked = onAddClicked,
+            onEditClicked = onEditClicked
+        )
     }
-    val onEditClicked = {
-        signal = 2
-    }
-    val onIncreaseButtonClicked: () -> Unit = {
-        optionStateViewModel.addNewOptionInput()
-    }
-    val onDecreaseButtonClicked: () -> Unit = {
-        optionStateViewModel.optionInputs.removeAt(optionInputs.size - 1)
-    }
-    val selectedItems = remember {
-        mutableStateListOf<OptionState>()
-    }
-    val selectedItemsInBox = remember {
-        mutableStateListOf<OptionState>()
-    }
-    val mergedItemsContainers = optionStateViewModel.mergedItemsContainers
-    var filteredItems by remember { mutableStateOf(optionList.toList()) }
-    var mergeGroupNumber by remember { mutableIntStateOf(0) }
-    var mergedItems by remember { mutableStateOf(emptyList<OptionState>()) }
-
-    val onSelectedItems: (List<OptionState>) -> Unit = {
-        if (it.size >= 2 || selectedItemsInBox.isNotEmpty()) {
-            signalForPopUp = 2
-        } else {
-            signalForPopUp = 1
-        }
-        if (it.isNotEmpty()) {
-            signalForAddIcon = true
-        }
-    }
-    val onSelectedItemsInBox: (List<OptionState>) -> Unit = {
-
-    }
-    val onMergeClicked: () -> Unit = {
-        optionStateViewModel.addToMergeGroup(mergeGroupNumber, selectedItems)
-        selectedItems.clear()
-        mergeGroupNumber++
-        state.isMultiSelectionModeEnabled = !state.isMultiSelectionModeEnabled
-    }
-    val onRemoveClicked: () -> Unit = {
-        selectedItemsInBox.forEachIndexed { index, item ->
-            optionStateViewModel.removeFromMergeGroup(mergeGroupNumber - 1, listOf(item))
-        }
-        selectedItemsInBox.clear()
-        state.isMultiSelectionModeEnabled = !state.isMultiSelectionModeEnabled
-    }
-    val onAddIconClicked: (Int) -> Unit = { groupId ->
-        if (selectedItems.isNotEmpty()) {
-            optionStateViewModel.addToMergeGroup(mergeGroupNumber - 1, selectedItems)
-    }
-    selectedItems.clear()
-    state.isMultiSelectionModeEnabled = !state.isMultiSelectionModeEnabled
-}
-//    LaunchedEffect(optionList, mergedItemsContainers) {
-//        snapshotFlow {
-//            Pair(optionList.toList(), mergedItemsContainers.flatMap { it.value })
-//        }.collect { (updatedOptionList, updatedMergedContainer) ->
-//            mergedItems = updatedMergedContainer
-//            filteredItems = updatedOptionList.filterNot {
-//                it in mergedItems
-//            }
-//        }
-//    }
-
-LaunchedEffect(mergedItemsContainers) {
-    snapshotFlow {
-        mergedItemsContainers.flatMap { it.value }
-    }.collect { updatedMergedContainer ->
-        mergedItems = updatedMergedContainer
-        filteredItems = optionList.filterNot {
-            it in mergedItems
-        }
-    }
-}
-
-if (signal == 1) {
-    OptionsInput(
-        onIncreaseButtonClicked = onIncreaseButtonClicked,
-        onDecreaseButtonClicked = onDecreaseButtonClicked,
-        onTickClicked = onTickClicked,
-        optionInputs = optionInputs
-    )
-}
-if (signal == 2) {
-    OptionsInMultiSelectionList(
-        optionList = optionList,
-        state = state,
-        mergeGroupNumber = mergeGroupNumber,
-        signal = signalForPopUp,
-        onMergeClicked = onMergeClicked,
-        onRemoveClicked = onRemoveClicked,
-        selectedItems = selectedItems,
-        selectedItemsInBox = selectedItemsInBox,
-        mergedItemsContainers = mergedItemsContainers,
-        filteredItems = filteredItems,
-        onSelectedItems = onSelectedItems,
-        onSelectedItemsInBox = onSelectedItemsInBox,
-        onAddClicked = onAddClicked,
-        onRightClicked = onRightClicked,
-        signalForAddIcon = signalForAddIcon,
-        onAddIconClicked = onAddIconClicked
-    )
-}
-if (signal == 3) {
-    OptionsPreviewSection(
-        options = optionList,
-        onAddClicked = onAddClicked,
-        onEditClicked = onEditClicked
-    )
-}
 }
 
 @Composable
@@ -286,7 +304,7 @@ private fun OptionsInput(
     onIncreaseButtonClicked: () -> Unit,
     onDecreaseButtonClicked: () -> Unit,
     onTickClicked: () -> Unit,
-    optionInputs: SnapshotStateList<OptionStateInput>
+    optionInputs: SnapshotStateList<AddFoodViewModel.OptionStateInput>
 ) {
     val scrollState = rememberScrollState()
     Box(
@@ -295,6 +313,7 @@ private fun OptionsInput(
     ) {
         Column(
             modifier
+                .padding(horizontal = 18.dp)
                 .fillMaxSize()
                 .background(color = MaterialTheme.colorScheme.background)
                 .verticalScroll(scrollState),
@@ -363,7 +382,7 @@ fun CheckButton(
 @Composable
 fun OptionColumn(
     modifier: Modifier = Modifier,
-    input: OptionStateInput
+    input: AddFoodViewModel.OptionStateInput
 ) {
     Column(
         modifier.fillMaxWidth(),
@@ -384,7 +403,8 @@ fun OptionsInMultiSelectionList(
     onAddIconClicked: (Int) -> Unit,
     onMergeClicked: () -> Unit,
     onRemoveClicked: () -> Unit,
-    signal: Int,
+    onDeleteClicked: () -> Unit,
+    signalForPopUp: Int,
     selectedItems: SnapshotStateList<OptionState>,
     selectedItemsInBox: SnapshotStateList<OptionState>,
     mergedItemsContainers: SnapshotStateMap<Int, MutableList<OptionState>>,
@@ -397,6 +417,7 @@ fun OptionsInMultiSelectionList(
     val scrollState = rememberScrollState()
 
     Column(
+        modifier.padding(horizontal = 18.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -459,10 +480,15 @@ fun OptionsInMultiSelectionList(
             )
         }
     }
-    if (signal == 2) {
+    if (signalForPopUp == 2) {
         PopUpForMergeAndRemove(
             onMergeClicked = onMergeClicked,
             onRemoveClicked = onRemoveClicked
+        )
+    }
+    if (signalForPopUp == -1) {
+        PopUpForDelete(
+            onDeleteClicked = onDeleteClicked
         )
     }
 }
@@ -616,7 +642,9 @@ fun OptionsPreviewSection(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Row(
-            modifier.fillMaxWidth(),
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 18.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -632,7 +660,8 @@ fun OptionsPreviewSection(
             )
         }
         OptionsSection(
-            modifier.verticalScroll(scrollState),
+            modifier
+                .verticalScroll(scrollState),
             options = options.toMutableList()
         )
     }
@@ -740,48 +769,6 @@ fun ListOptionWithAmount(
 }
 
 @Composable
-fun ListSurface(
-    modifier: Modifier = Modifier,
-    text: String
-) {
-    OutlinedCard(
-        modifier = Modifier
-            .height(35.dp)
-            .width(125.dp)
-            .padding(16.dp),
-        border = BorderStroke(width = 2.dp, color = MaterialTheme.colorScheme.onBackground),
-        colors = CardColors(
-            containerColor = MaterialTheme.colorScheme.background,
-            contentColor = MaterialTheme.colorScheme.onBackground,
-            disabledContentColor = MaterialTheme.colorScheme.onBackground,
-            disabledContainerColor = MaterialTheme.colorScheme.background,
-        )
-    ) {
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .widthIn(100.dp)
-                .height(35.dp)
-                .padding(5.dp)
-        ) {
-            Text(
-                text = text,
-                color = MaterialTheme.colorScheme.onBackground,
-                style = MaterialTheme.typography.bodySmall
-            )
-        }
-    }
-}
-
-@Composable
-fun ListPriceView(
-    modifier: Modifier = Modifier,
-    price: Int
-) {
-    ListSurface(text = "₦$price")
-}
-
-@Composable
 fun ButtonRow(
     modifier: Modifier = Modifier,
     onIncreaseButtonClicked: () -> Unit,
@@ -807,7 +794,7 @@ fun ButtonRow(
 @Composable
 fun OptionInputItem(
     modifier: Modifier = Modifier,
-    input: OptionStateInput
+    input: AddFoodViewModel.OptionStateInput
 ) {
     Column(
         modifier.background(MaterialTheme.colorScheme.background),
@@ -852,23 +839,6 @@ fun OptionButton(
                 contentDescription = null,
                 tint = contentColor
             )
-        }
-    }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-private fun OptionInputItemPreview() {
-    AppTheme {
-        Box(
-            Modifier
-                .fillMaxSize()
-                .background(
-                    color = MaterialTheme.colorScheme.background
-                ),
-            contentAlignment = Alignment.Center
-        ) {
-            OptionCheck()
         }
     }
 }
@@ -1010,7 +980,7 @@ fun PriceInput(
 @Composable
 fun AmountInput(
     modifier: Modifier = Modifier,
-    input: OptionStateInput
+    input: AddFoodViewModel.OptionStateInput
 ) {
     var signal by remember { mutableStateOf(false) }
     val onButtonClicked = {
@@ -1040,7 +1010,7 @@ fun AmountText(
 @Composable
 fun AmountDetails(
     modifier: Modifier = Modifier,
-    input: OptionStateInput
+    input: AddFoodViewModel.OptionStateInput
 ) {
     var isExpanded by remember {
         mutableStateOf(false)
@@ -1148,7 +1118,7 @@ fun ConstrainLayoutForAmount(
 @Composable
 fun AmountValueInput(
     modifier: Modifier = Modifier,
-    input: OptionStateInput,
+    input: AddFoodViewModel.OptionStateInput,
     onAmountValueChanged: (String) -> Unit,
     onUpperLimitValueChanged: (String) -> Unit,
     onLowerLimitValueChanged: (String) -> Unit
@@ -1194,19 +1164,6 @@ fun AmountValueInput(
         }
     }
 }
-
-//@Preview(showBackground = true, showSystemUi = true)
-//@Composable
-//private fun Preview() {
-//    AppTheme {
-//        Box(
-//            Modifier.fillMaxSize(),
-//            contentAlignment = Alignment.Center
-//        ) {
-//            OptionInputItem()
-//        }
-//    }
-//}
 
 @Composable
 fun IntSurface(

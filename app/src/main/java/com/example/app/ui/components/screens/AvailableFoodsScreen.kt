@@ -86,7 +86,10 @@ private fun FoodsListColumn(
     onFoodItemClicked: () -> Unit
 ) {
     Column(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .padding(top = 10.dp)
+            .padding(bottom = 40.dp),
         verticalArrangement = Arrangement.spacedBy(20.dp)
     ) {
         data.onEach { item ->
@@ -132,7 +135,7 @@ private fun Content(
             .fillMaxSize()
             .padding(horizontal = 18.dp)
             .padding(top = 50.dp)
-            .padding(bottom = 24.dp),
+            .padding(bottom = 10.dp),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         SectionHeader(
