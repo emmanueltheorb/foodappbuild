@@ -2,14 +2,15 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.google.gms.google.services)
 }
 
 android {
-    namespace = "com.example.app"
+    namespace = "com.orb.bmdadmin"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.app"
+        applicationId = "com.orb.bmdadmin"
         minSdk = 24
         targetSdk = 34
         versionCode = 1
@@ -50,6 +51,7 @@ dependencies {
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
     implementation(libs.compose.constraint.layout)
+    implementation(libs.firebase.database)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -62,4 +64,5 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.compose)
     implementation(libs.kotlinx.serialization.json)
     implementation (libs.kotlinx.coroutines.android)
+    implementation(libs.coil.compose)
 }

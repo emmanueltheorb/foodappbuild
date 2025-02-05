@@ -19,6 +19,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "App"
+rootProject.name = "BMD Admin"
 include(":app")
  
