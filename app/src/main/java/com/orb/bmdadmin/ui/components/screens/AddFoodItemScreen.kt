@@ -16,11 +16,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -30,35 +34,51 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.toMutableStateList
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import coil3.compose.AsyncImage
 import coil3.compose.rememberAsyncImagePainter
+import coil3.request.ImageRequest
 import com.orb.bmdadmin.R
 import com.orb.bmdadmin.data.AddFoodViewModel
 import com.orb.bmdadmin.data.AddFoodViewModelFactory
 import com.orb.bmdadmin.data.FoodItemStateUrl
+import com.orb.bmdadmin.data.Foods
 import com.orb.bmdadmin.data.OptionState
+import com.orb.bmdadmin.repository.StorageRepository
 import com.orb.bmdadmin.ui.components.MyIntTextField
 import com.orb.bmdadmin.ui.components.MyNullableTextField
+import com.orb.bmdadmin.ui.components.MySnackBar
 import com.orb.bmdadmin.ui.components.MyTextField
 import com.orb.bmdadmin.ui.components.rememberMultiSelectionState
+import com.orb.bmdadmin.ui.components.sections.BoxForCheckButton
 import com.orb.bmdadmin.ui.components.sections.OptionInputSection
+import kotlinx.coroutines.launch
 
 @Composable
 fun AddFoodItemScreen(
     modifier: Modifier = Modifier,
-    foodForEdit: FoodItemStateUrl? = null
+    foodForEdit: Foods? = null,
+    onNavigate: () -> Unit
 ) {
     val addFoodViewModel: AddFoodViewModel =
         viewModel(factory = AddFoodViewModelFactory(foodForEdit))
+
+    val addFoodScreenState = addFoodViewModel.addFoodScreenState
+    val scope = rememberCoroutineScope()
+    val scaffoldState = rememberScrollState()
+    val snackBarHostState = remember { SnackbarHostState() }
+
     val foodInput = addFoodViewModel.foodList[addFoodViewModel.foodIndex]
     val state = rememberMultiSelectionState()
     val optionInputs = addFoodViewModel.optionInputs
@@ -69,7 +89,7 @@ fun AddFoodItemScreen(
     val onAddClicked = {
         signal = 1
     }
-    val onTickClicked = {
+    val onFirstNextClicked = {
         signal = 2
     }
     val onRightClicked = {
@@ -164,54 +184,107 @@ fun AddFoodItemScreen(
         rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri ->
             selectedImage = uri
         }
-
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(color = MaterialTheme.colorScheme.background)
-            .padding(top = 50.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp)
-    ) {
-        AvailableFoodItemInput(
-            foodImage = selectedImage,
-            foodName = foodInput.foodName,
-            foodPrice = foodInput.price,
-            onAddImageClicked = {
-                launcher.launch("image/*")
-            },
-            onUriChanged = {
-                foodInput.imgUri.value = it
+    val onDoneClicked: () -> Unit = {
+        if (foodForEdit != null) {
+            addFoodViewModel.updateFoodState(foodForEdit.documentId)
+            onNavigate.invoke()
+        } else {
+            scope.launch {
+                addFoodViewModel.addFoodState()
+                onNavigate.invoke()
             }
-        )
-        AvailabilitySectionInput(
-            amountAvailable = foodInput.amount
-        )
-        OptionInputSection(
-            modifier.weight(1f),
-            onIncreaseButtonClicked = onIncreaseButtonClicked,
-            onDecreaseButtonClicked = onDecreaseButtonClicked,
-            onTickClicked = onTickClicked,
-            optionInputs = optionInputs,
-            state = state,
-            optionList = optionList,
-            mergeGroupNumber = mergeGroupNumber,
-            signalForAddIcon = signalForAddIcon,
-            onAddIconClicked = onAddIconClicked,
-            onMergeClicked = onMergeClicked,
-            onRemoveClicked = onRemoveClicked,
-            onDeleteClicked = onDeleteClicked,
-            signal = signal,
-            signalForPopUp = signalForPopUp,
-            selectedItems = selectedItems,
-            selectedItemsInBox = selectedItemsInBox,
-            mergedItemsContainers = mergedItemsContainers,
-            filteredItems = filteredItems,
-            onSelectedItems = onSelectedItems,
-            onSelectedItemsInBox = onSelectedItemsInBox,
-            onAddClicked = onAddClicked,
-            onRightClicked = onRightClicked,
-            onEditClicked = onEditClicked
-        )
+        }
+    }
+
+    Scaffold(
+        snackbarHost = {
+            SnackbarHost(
+                hostState = snackBarHostState,
+                snackbar = { snackBarData ->
+                    MySnackBar(
+                        snackBarData = snackBarData,
+                        isSuccess = true
+                    )
+                }
+            )
+        }
+    ) { padding ->
+        Box(
+            modifier.fillMaxSize(),
+            contentAlignment = Alignment.BottomEnd
+        ) {
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(color = MaterialTheme.colorScheme.background)
+//                .padding(top = 50.dp)
+                    .padding(padding),
+                verticalArrangement = Arrangement.spacedBy(18.dp)
+            ) {
+                if (addFoodScreenState.foodAddedStatus) {
+                    scope.launch {
+                        snackBarHostState
+                            .showSnackbar(
+                                message = "Added Food Successfully"
+                            )
+                        addFoodViewModel.resetFoodAddedStatus()
+                        onNavigate.invoke()
+                    }
+                }
+
+                if (addFoodScreenState.foodUpdatedStatus) {
+                    scope.launch {
+                        snackBarHostState
+                            .showSnackbar("Food Updated Successfully")
+                        addFoodViewModel.resetFoodAddedStatus()
+                        onNavigate.invoke()
+                    }
+                }
+
+                AvailableFoodItemInput(
+                    foodImage = selectedImage,
+                    imageUrl = foodForEdit?.imgUrl ?: "",
+                    foodName = foodInput.foodName,
+                    foodPrice = foodInput.price,
+                    onAddImageClicked = {
+                        launcher.launch("image/*")
+                    },
+                    onUriChanged = {
+                        foodInput.imgUri.value = it
+                    }
+                )
+                AvailabilitySectionInput(
+                    amountAvailable = foodInput.amount
+                )
+                OptionInputSection(
+                    modifier.weight(1f),
+                    onIncreaseButtonClicked = onIncreaseButtonClicked,
+                    onDecreaseButtonClicked = onDecreaseButtonClicked,
+                    onTickClicked = onFirstNextClicked,
+                    optionInputs = optionInputs,
+                    state = state,
+                    optionList = optionList,
+                    mergeGroupNumber = mergeGroupNumber,
+                    signalForAddIcon = signalForAddIcon,
+                    onAddIconClicked = onAddIconClicked,
+                    onMergeClicked = onMergeClicked,
+                    onRemoveClicked = onRemoveClicked,
+                    onDeleteClicked = onDeleteClicked,
+                    signal = signal,
+                    signalForPopUp = signalForPopUp,
+                    selectedItems = selectedItems,
+                    selectedItemsInBox = selectedItemsInBox,
+                    mergedItemsContainers = mergedItemsContainers,
+                    filteredItems = filteredItems,
+                    onSelectedItems = onSelectedItems,
+                    onSelectedItemsInBox = onSelectedItemsInBox,
+                    onAddClicked = onAddClicked,
+                    onRightClicked = onRightClicked,
+                    onEditClicked = onEditClicked
+                )
+            }
+            BoxForCheckButton(onTickClicked = onDoneClicked)
+        }
     }
 }
 
@@ -219,6 +292,7 @@ fun AddFoodItemScreen(
 private fun AvailableFoodItemInput(
     modifier: Modifier = Modifier,
     foodImage: Uri?,
+    imageUrl: String,
     onAddImageClicked: () -> Unit,
     onUriChanged: (Uri?) -> Unit,
     foodName: MutableState<String>,
@@ -231,6 +305,7 @@ private fun AvailableFoodItemInput(
     ) {
         FoodImageInput(
             foodImage = foodImage,
+            imageUrl = imageUrl,
             onAddImageClicked = onAddImageClicked,
             onUriChanged = onUriChanged
         )
@@ -245,6 +320,7 @@ private fun AvailableFoodItemInput(
 private fun FoodImageInput(
     modifier: Modifier = Modifier,
     foodImage: Uri?,
+    imageUrl: String,
     onUriChanged: (Uri?) -> Unit,
     onAddImageClicked: () -> Unit
 ) {
@@ -263,7 +339,18 @@ private fun FoodImageInput(
                 contentDescription = null,
                 contentScale = ContentScale.Crop
             )
-        } else {
+        }
+        if (imageUrl.isNotEmpty()) {
+            AsyncImage(
+                modifier = modifier.fillMaxSize(),
+                model = ImageRequest.Builder(LocalContext.current)
+                    .data(imageUrl)
+                    .build(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop
+            )
+        }
+        if (foodImage == null && imageUrl.isEmpty()) {
             AddImageButton()
         }
     }

@@ -136,23 +136,24 @@ fun MyIconButton(
 fun Surface(
     modifier: Modifier = Modifier,
     text: String,
-    width: Dp = 110.dp
+    width: Dp = 110.dp,
+    height: Dp = 50.dp
 ) {
     OutlinedCard(
         modifier = Modifier.padding(16.dp),
         border = BorderStroke(width = 2.dp, color = MaterialTheme.colorScheme.onBackground),
         colors = CardColors(
-            containerColor = MaterialTheme.colorScheme.background,
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
             contentColor = MaterialTheme.colorScheme.onBackground,
             disabledContentColor = MaterialTheme.colorScheme.onBackground,
-            disabledContainerColor = MaterialTheme.colorScheme.background,
+            disabledContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
         )
     ) {
         Box(
             contentAlignment = Alignment.Center,
             modifier = Modifier
                 .width(width)
-                .height(50.dp)
+                .height(height)
                 .padding(5.dp)
         ) {
             Text(

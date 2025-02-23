@@ -3,12 +3,25 @@ package com.orb.bmdadmin.data
 import android.net.Uri
 import androidx.annotation.DrawableRes
 import com.orb.bmdadmin.R
+import kotlinx.serialization.Serializable
 
 sealed class FoodImage {
     data class Local(val resId: Int) : FoodImage()
     data class Gallery(val uri: Uri?) : FoodImage()
     data class Remote(val url: String) : FoodImage()
 }
+
+@Serializable
+data class Foods(
+    val id: Int = 0,
+    val imgUrl: String = "",
+    val foodName: String = "",
+    val price: Int = 0,
+    val availability: Boolean = true,
+    val amount: Int? = null,
+    val options: List<OptionState>? = emptyList<OptionState>(),
+    val documentId: String = ""
+)
 
 data class FoodItemStateUrl(
     val id: Int,
@@ -30,6 +43,7 @@ data class FoodItemState(
     val options: List<OptionState>?
 )
 
+@Serializable
 data class OptionState(
     val id: Int,
     val name: String,

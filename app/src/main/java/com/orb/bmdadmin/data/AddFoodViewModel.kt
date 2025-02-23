@@ -6,27 +6,43 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateMapOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import com.google.firebase.auth.FirebaseUser
+import com.orb.bmdadmin.repository.StorageRepository
 
 class AddFoodViewModelFactory(
-    private val foodForEdit: FoodItemStateUrl?
+    private val foodForEdit: Foods?
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(AddFoodViewModel::class.java)) {
-            return AddFoodViewModel(foodForEdit) as T
+            return AddFoodViewModel(
+                foodForEdit
+            ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
 
 class AddFoodViewModel(
-    foodForEdit: FoodItemStateUrl? = null
+    foodForEdit: Foods? = null,
+    private val repository: StorageRepository = StorageRepository()
 ) : ViewModel() {
+    var addFoodScreenState by mutableStateOf(AddFoodScreenState())
+
+    private val hasUser: Boolean
+        get() = repository.hasUser()
+
+    private val user: FirebaseUser?
+        get() = repository.user()
+
     val foodList = SnapshotStateList<FoodItemInput>()
     val foodIndex = 0
+    val updateIndexPosition: MutableState<Int?> = mutableStateOf(null)
 
     val optionInputs = mutableStateListOf<OptionStateInput>()
 
@@ -34,6 +50,7 @@ class AddFoodViewModel(
 
     init {
         if (foodForEdit == null) {
+            resetState()
             addNewFood()
             addNewOptionInput()
         } else {
@@ -55,11 +72,53 @@ class AddFoodViewModel(
         )
     }
 
-    fun getFoodItemState(): FoodItemStateUrl {
-        val foodInput = foodList[foodIndex]
+    suspend fun addFoodState() {
+        val foodInput = foodList.last()
+        val id = repository.getFoodId()
+
+        repository.uploadImageToFirebase(
+            uri = foodInput.imgUri.value,
+            onSuccess = { url ->
+                foodInput.imgUrl.value = url
+                val foodItem = FoodItemStateUrl(
+                    id = id,
+                    imgUrl = url,
+                    foodName = foodInput.foodName.value,
+                    price = foodInput.price.value,
+                    availability = foodInput.availability.value,
+                    amount = foodInput.amount.value,
+                    options = foodInput.options.value
+                )
+
+                if (hasUser) {
+                    repository.addFood(
+                        id = foodItem.id,
+                        imgUrl = foodItem.imgUrl,
+                        foodName = foodItem.foodName,
+                        price = foodItem.price,
+                        availability = foodItem.availability,
+                        amount = foodItem.amount,
+                        options = foodItem.options
+                    ) {
+                        addFoodScreenState = addFoodScreenState.copy(foodAddedStatus = it)
+                    }
+                }
+            },
+            onUploadError = { error ->
+                if (error.isNotEmpty()) {
+                    addFoodScreenState = addFoodScreenState.copy(imageUploadError = true)
+                } else {
+                    addFoodScreenState = addFoodScreenState.copy(imageUploadError = false)
+                }
+            }
+        )
+    }
+
+    fun updateFoodState(documentId: String) {
+        val foodInput = foodList.last()
 
         val foodItem = FoodItemStateUrl(
-            id = foodIndex,
+            id = updateIndexPosition.value!!,
             imgUrl = foodInput.imgUrl.value,
             foodName = foodInput.foodName.value,
             price = foodInput.price.value,
@@ -68,11 +127,33 @@ class AddFoodViewModel(
             options = foodInput.options.value
         )
 
-        return foodItem
+        repository.updateFood(
+            id = foodItem.id,
+            imgUrl = foodItem.imgUrl,
+            foodName = foodItem.foodName,
+            price = foodItem.price,
+            availability = foodItem.availability,
+            amount = foodItem.amount,
+            options = foodItem.options,
+            documentId = documentId
+        ) {
+            addFoodScreenState = addFoodScreenState.copy(foodUpdatedStatus = it)
+        }
     }
 
-    fun convertToFoodItemInput(foodItem: FoodItemStateUrl) {
-        val foodItemInput =  FoodItemInput(
+    fun resetFoodAddedStatus() {
+        addFoodScreenState =
+            addFoodScreenState.copy(foodAddedStatus = false, foodUpdatedStatus = false)
+    }
+
+    fun resetState() {
+        addFoodScreenState = AddFoodScreenState()
+    }
+
+    fun convertToFoodItemInput(foodItem: Foods) {
+        updateIndexPosition.value = foodItem.id
+
+        val foodItemInput = FoodItemInput(
             imgUri = mutableStateOf(null),
             imgUrl = mutableStateOf(foodItem.imgUrl),
             foodName = mutableStateOf(foodItem.foodName),
@@ -82,7 +163,6 @@ class AddFoodViewModel(
             options = mutableStateOf(foodItem.options)
         )
 
-//        foodList[foodItem.id] = foodItemInput
         foodList.add(foodItemInput)
         optionInputs.addAll(getOptionInputState(foodItem.options))
         addToMergeContainers(foodItem.options)
@@ -120,7 +200,7 @@ class AddFoodViewModel(
     fun getOptionInputState(options: List<OptionState>?): List<OptionStateInput> {
         var inputOptions: List<OptionStateInput> = emptyList()
         if (options != null) {
-            inputOptions =  options.map { option ->
+            inputOptions = options.map { option ->
                 OptionStateInput(
                     name = mutableStateOf(option.name),
                     price = mutableStateOf(option.price),
@@ -203,3 +283,9 @@ class AddFoodViewModel(
         val options: MutableState<List<OptionState>?>
     )
 }
+
+data class AddFoodScreenState(
+    val foodAddedStatus: Boolean = false,
+    val foodUpdatedStatus: Boolean = false,
+    val imageUploadError: Boolean = false
+)

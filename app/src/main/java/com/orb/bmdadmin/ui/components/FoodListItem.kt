@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -30,14 +31,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
 import com.orb.bmdadmin.data.FoodItemState
+import com.orb.bmdadmin.data.FoodItemsData
+import com.orb.bmdadmin.data.Foods
+import com.orb.bmdadmin.ui.theme.AppTheme
 
 @Composable
 fun FoodListItem(
     modifier: Modifier = Modifier,
-    data: FoodItemState,
-    onFoodInListClicked: () -> Unit
+    data: Foods,
+    onValueChange: (Int?) -> Unit,
+    onFoodInListClicked: () -> Unit,
+    onAvailabilityChange: (Boolean) -> Unit
 ) {
     Row(
         modifier = modifier
@@ -52,14 +63,23 @@ fun FoodListItem(
             onFoodInListClicked = onFoodInListClicked
         )
         Spacer(modifier.width(7.dp))
-        AvailabilityText(availability = data.availability)
+        MySmallWidthTextField(
+            placeholder = data.amount,
+            textValue = data.amount,
+            onValueChange = onValueChange,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
+        AvailabilityText(
+            availability = data.availability,
+            onAvailabilityChange = onAvailabilityChange
+        )
     }
 }
 
 @Composable
 private fun FoodDetail(
     modifier: Modifier = Modifier,
-    data: FoodItemState,
+    data: Foods,
     onFoodInListClicked: () -> Unit
 ) {
     Card(
@@ -72,7 +92,7 @@ private fun FoodDetail(
             modifier = modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            FoodInListImage(foodImage = data.img)
+            FoodInListImage(foodImage = data.imgUrl)
             Surface(
                 modifier = modifier
                     .fillMaxSize()
@@ -90,11 +110,13 @@ private fun FoodDetail(
 @Composable
 private fun FoodInListImage(
     modifier: Modifier = Modifier,
-    @DrawableRes foodImage: Int
+    foodImage: String
 ) {
-    Image(
+    AsyncImage(
         modifier = modifier.fillMaxSize(),
-        painter = painterResource(foodImage),
+        model = ImageRequest.Builder(LocalContext.current)
+            .data(foodImage)
+            .build(),
         contentDescription = null,
         contentScale = ContentScale.Crop
     )
@@ -103,7 +125,8 @@ private fun FoodInListImage(
 @Composable
 private fun AvailabilityText(
     modifier: Modifier = Modifier,
-    availability: Boolean
+    availability: Boolean,
+    onAvailabilityChange: (Boolean) -> Unit
 ) {
     var availability by remember { mutableStateOf(availability) }
     var availabilityString by remember { mutableStateOf("") }
@@ -120,7 +143,7 @@ private fun AvailabilityText(
         modifier = modifier
             .widthIn(130.dp)
             .clickable(onClick = {
-                availability = !availability
+                onAvailabilityChange(!availability)
             }),
         text = availabilityString,
         color = stringColor,
@@ -129,10 +152,18 @@ private fun AvailabilityText(
     )
 }
 
-//@Preview(showBackground = true, showSystemUi = true)
-//@Composable
-//private fun FoodListItemPreview() {
-//    AppTheme {
-//        FoodListItem(data = FoodItemsData[1], onFoodInListClicked = {})
-//    }
-//}
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+private fun FoodListItemPreview() {
+    AppTheme {
+        FoodListItem(
+            data = Foods(
+                foodName = "Egusi and soup",
+                price = 450
+            ),
+            onFoodInListClicked = {},
+            onValueChange = {},
+            onAvailabilityChange = {}
+        )
+    }
+}

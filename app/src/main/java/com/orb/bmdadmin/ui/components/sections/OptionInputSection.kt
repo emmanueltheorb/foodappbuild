@@ -56,11 +56,9 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.orb.bmdadmin.R
 import com.orb.bmdadmin.data.AddFoodViewModel
 import com.orb.bmdadmin.data.OptionState
-import com.orb.bmdadmin.data.OptionStateViewModel
 import com.orb.bmdadmin.ui.components.MergedGroup
 import com.orb.bmdadmin.ui.components.MultiSelectionList
 import com.orb.bmdadmin.ui.components.MultiSelectionState
@@ -257,14 +255,13 @@ fun OptionModeSwitch(
     onSelectedItemsInBox: (List<OptionState>) -> Unit,
     onAddClicked: () -> Unit,
     onRightClicked: () -> Unit,
-    onEditClicked: () -> Unit,
-    optionStateViewModel: OptionStateViewModel = viewModel()
+    onEditClicked: () -> Unit
 ) {
     if (signal == 1) {
         OptionsInput(
             onIncreaseButtonClicked = onIncreaseButtonClicked,
             onDecreaseButtonClicked = onDecreaseButtonClicked,
-            onTickClicked = onTickClicked,
+            onFirstNextClicked = onTickClicked,
             optionInputs = optionInputs
         )
     }
@@ -303,35 +300,41 @@ private fun OptionsInput(
     modifier: Modifier = Modifier,
     onIncreaseButtonClicked: () -> Unit,
     onDecreaseButtonClicked: () -> Unit,
-    onTickClicked: () -> Unit,
+    onFirstNextClicked: () -> Unit,
     optionInputs: SnapshotStateList<AddFoodViewModel.OptionStateInput>
 ) {
     val scrollState = rememberScrollState()
-    Box(
-        modifier.fillMaxSize(),
-        contentAlignment = Alignment.BottomEnd
+    Column(
+        modifier
+            .padding(horizontal = 18.dp)
+            .fillMaxSize()
+            .background(color = MaterialTheme.colorScheme.background)
+            .verticalScroll(scrollState),
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column(
-            modifier
-                .padding(horizontal = 18.dp)
-                .fillMaxSize()
-                .background(color = MaterialTheme.colorScheme.background)
-                .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+        Row(
+            modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            optionInputs.forEach { input ->
-                OptionColumn(
-                    input = input
-                )
-            }
-            ButtonRow(
-                onIncreaseButtonClicked = onIncreaseButtonClicked,
-                onDecreaseButtonClicked = onDecreaseButtonClicked
+            Spacer(modifier.weight(1f))
+            TextButton(
+                text = "Next",
+                icon = R.drawable.right_ic,
+                onClick = onFirstNextClicked
             )
-            Spacer(modifier = modifier.height(50.dp))
         }
-        BoxForCheckButton(onTickClicked = onTickClicked)
+        optionInputs.forEach { input ->
+            OptionColumn(
+                input = input
+            )
+        }
+        ButtonRow(
+            onIncreaseButtonClicked = onIncreaseButtonClicked,
+            onDecreaseButtonClicked = onDecreaseButtonClicked
+        )
+        Spacer(modifier = modifier.height(50.dp))
     }
 }
 

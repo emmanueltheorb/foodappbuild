@@ -138,6 +138,8 @@ fun MultiSelectionContainer(
 @Composable
 fun PopUpForMergeAndRemove(
     modifier: Modifier = Modifier,
+    firstString: String = "Merge",
+    secondString: String = "Remove",
     onMergeClicked: () -> Unit,
     onRemoveClicked: () -> Unit
 ) {
@@ -164,14 +166,14 @@ fun PopUpForMergeAndRemove(
                 horizontalArrangement = Arrangement.spacedBy(5.dp)
             ) {
                 Text(
-                    text = "Merge",
+                    text = firstString,
                     modifier
                         .padding(18.dp)
                         .clickable(onClick = onMergeClicked),
                     style = MaterialTheme.typography.bodyMedium
                 )
                 Text(
-                    text = "Remove",
+                    text = secondString,
                     modifier
                         .padding(18.dp)
                         .clickable(onClick = onRemoveClicked),

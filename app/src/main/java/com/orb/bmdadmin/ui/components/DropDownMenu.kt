@@ -58,10 +58,10 @@ fun dropdownMenu(
         modifier = Modifier.padding(16.dp),
         border = BorderStroke(width = 2.dp, color = MaterialTheme.colorScheme.onBackground),
         colors = CardColors(
-            containerColor = MaterialTheme.colorScheme.background,
+            containerColor = MaterialTheme.colorScheme.tertiaryContainer,
             contentColor = MaterialTheme.colorScheme.onBackground,
             disabledContentColor = MaterialTheme.colorScheme.onBackground,
-            disabledContainerColor = MaterialTheme.colorScheme.background,
+            disabledContainerColor = MaterialTheme.colorScheme.tertiaryContainer,
         )
     ) {
         Row(
@@ -87,13 +87,13 @@ fun dropdownMenu(
         }
 
         DropdownMenu(
-            modifier = modifier.background(MaterialTheme.colorScheme.background),
+            modifier = modifier.background(MaterialTheme.colorScheme.tertiaryContainer),
             expanded = isExpanded,
             onDismissRequest = { isExpanded = false }
         ) {
             nameList.forEachIndexed { index, text ->
                 DropdownMenuItem(
-                    modifier = modifier.background(MaterialTheme.colorScheme.background),
+                    modifier = modifier.background(MaterialTheme.colorScheme.tertiaryContainer),
                     colors = MenuItemColors(
                         textColor = MaterialTheme.colorScheme.onBackground,
                         leadingIconColor = MaterialTheme.colorScheme.onBackground,

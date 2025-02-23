@@ -102,7 +102,7 @@ private fun ScreenContent(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun ReservingScreenPreview() {
-    AppTheme {
+    AppTheme(darkTheme = true) {
         ReservingScreen()
     }
 }
