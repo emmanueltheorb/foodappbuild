@@ -1,5 +1,6 @@
 package com.orb.bmdadmin.login
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -53,7 +54,9 @@ fun LoginScreen(
     val context = LocalContext.current
 
     Column(
-        modifier.fillMaxSize(),
+        modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -148,7 +151,9 @@ fun SignUpScreen(
     val context = LocalContext.current
 
     Column(
-        modifier.fillMaxSize(),
+        modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
@@ -267,9 +272,10 @@ fun OTPVerificationScreen(
 
     if (!isAdmin) {
         Column(
-            modifier = Modifier
+            modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(16.dp)
+                .background(MaterialTheme.colorScheme.background),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {

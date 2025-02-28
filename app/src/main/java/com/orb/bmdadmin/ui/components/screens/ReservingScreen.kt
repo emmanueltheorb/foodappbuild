@@ -13,8 +13,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -22,6 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.orb.bmdadmin.data.OptionReserved
 import com.orb.bmdadmin.ui.components.sections.OptionsCheck
 import com.orb.bmdadmin.data.ReservingScreenState
 import com.orb.bmdadmin.ui.components.AvailableFoodItem
@@ -42,7 +46,14 @@ fun ReservingScreen(
     } else {
         foodAmount!!
     }
-    val sum by remember { mutableIntStateOf(0) }
+    val priceMap = remember { mutableStateMapOf<String, Int>() }
+    val optionMap = remember { mutableStateMapOf<String, OptionReserved>() }
+    val totalPrice by remember { derivedStateOf { priceMap.values.sum() } }
+
+    LaunchedEffect(data.id) {
+        priceMap.clear()
+        optionMap.clear()
+    }
 
     Box(
         modifier = modifier.fillMaxSize(),
@@ -51,11 +62,17 @@ fun ReservingScreen(
         ScreenContent(
             modifier = modifier
                 .fillMaxSize(),
-            screenState = screenState
+            screenState = screenState,
+            onPriceChange = { key, price ->
+                priceMap[key] = price
+            },
+            onOptionChange = { key, option ->
+                optionMap[key] = option
+            }
         )
         QuantityBottomBar(
             modifier = modifier.navigationBarsPadding(),
-            price = sum,
+            price = totalPrice,
             itemPrice = data.price,
             upperLimit = amount,
             data = data
@@ -66,7 +83,9 @@ fun ReservingScreen(
 @Composable
 private fun ScreenContent(
     modifier: Modifier = Modifier,
-    screenState: ReservingScreenState
+    screenState: ReservingScreenState,
+    onPriceChange: (String, Int) -> Unit,
+    onOptionChange: (String, OptionReserved) -> Unit
 ) {
     val data = screenState.foodsList[screenState.foodItemId]
     val scrollState = rememberScrollState()
@@ -88,7 +107,9 @@ private fun ScreenContent(
             data = data
         )
         OptionsCheck(
-            data = data
+            data = data,
+            onPriceChange = onPriceChange,
+            onOptionChange = onOptionChange
         )
         Spacer(
             modifier = modifier

@@ -2,6 +2,7 @@ package com.orb.bmdadmin.ui.components
 
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
+import com.orb.bmdadmin.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -37,6 +38,9 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
+import com.bumptech.glide.integration.compose.placeholder
 import com.orb.bmdadmin.data.FoodItemState
 import com.orb.bmdadmin.data.FoodItemsData
 import com.orb.bmdadmin.data.Foods
@@ -107,18 +111,22 @@ private fun FoodDetail(
     }
 }
 
+@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 private fun FoodInListImage(
     modifier: Modifier = Modifier,
     foodImage: String
 ) {
-    AsyncImage(
+    GlideImage(
         modifier = modifier.fillMaxSize(),
-        model = ImageRequest.Builder(LocalContext.current)
-            .data(foodImage)
-            .build(),
+        model = foodImage,
+//        ImageRequest.Builder(LocalContext.current)
+//            .data(foodImage)
+//            .build(),
         contentDescription = null,
-        contentScale = ContentScale.Crop
+        contentScale = ContentScale.Crop,
+        loading = placeholder(R.drawable.right_ic),
+        failure = placeholder(R.drawable.ic_close)
     )
 }
 

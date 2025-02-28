@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -22,6 +23,8 @@ import androidx.compose.material3.OutlinedCard
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -34,20 +37,25 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.orb.bmdadmin.R
 import com.orb.bmdadmin.data.FoodItemState
+import com.orb.bmdadmin.data.OptionReserved
 import com.orb.bmdadmin.data.OptionState
 import com.orb.bmdadmin.data.PriceViewModel
-import com.orb.bmdadmin.ui.components.dropdownMenu
+import com.orb.bmdadmin.ui.components.DropdownMenuSelector
 
 @Composable
 fun OptionsCheck(
     modifier: Modifier = Modifier,
-    data: FoodItemState
+    data: FoodItemState,
+    onPriceChange: (String, Int) -> Unit,
+    onOptionChange: (String, OptionReserved) -> Unit
 ) {
     if (data.options == null) {
         NullOptions(data = data)
     } else {
         OptionsSection(
-            options = data.options
+            options = data.options,
+            onPriceChange = onPriceChange,
+            onOptionChange = onOptionChange
         )
     }
 }
@@ -62,7 +70,9 @@ fun NullOptions(
 @Composable
 fun OptionsSection(
     modifier: Modifier = Modifier,
-    options: List<OptionState>
+    options: List<OptionState>,
+    onPriceChange: (String, Int) -> Unit,
+    onOptionChange: (String, OptionReserved) -> Unit
 ) {
     Column(
         modifier = modifier.fillMaxSize(),
@@ -70,11 +80,16 @@ fun OptionsSection(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         NotMergedOptions(
-            options = options
+            options = options,
+            onPriceChange = onPriceChange,
+            onOptionChange = onOptionChange
         )
         MergedOptions(
-            options = options
+            options = options,
+            onPriceChange = onPriceChange,
+            onOptionChange = onOptionChange
         )
+        Spacer(modifier.height(100.dp))
     }
 }
 
@@ -235,11 +250,41 @@ fun createNumberList(
 @Composable
 fun OptionWithoutAmount(
     modifier: Modifier = Modifier,
-    option: OptionState
+    option: OptionState,
+    key: String,
+    onPriceChange: (String, Int) -> Unit,
+    onOptionChange: (String, OptionReserved) -> Unit
 ) {
     var optionState: OptionState = option
     var priceView = optionState.price
 
+    LaunchedEffect(priceView) {
+        onPriceChange(key, priceView)
+        onOptionChange(
+            key,
+            OptionReserved(
+                id = option.id,
+                name = option.name,
+                amount = option.amount,
+                price = priceView
+            )
+        )
+    }
+
+    DisposableEffect(key) {
+        onDispose {
+            onPriceChange(key, 0)
+            onOptionChange(
+                key,
+                OptionReserved(
+                    0,
+                    "",
+                    null,
+                    0
+                )
+            )
+        }
+    }
 
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -256,7 +301,10 @@ fun OptionWithoutAmount(
 @Composable
 fun OptionWithAmount(
     modifier: Modifier = Modifier,
-    option: OptionState
+    option: OptionState,
+    key: String,
+    onPriceChange: (String, Int) -> Unit,
+    onOptionChange: (String, OptionReserved) -> Unit
 ) {
     var optionState: OptionState = option
     var amountView by remember { mutableIntStateOf(optionState.amount!!) }
@@ -264,6 +312,34 @@ fun OptionWithAmount(
     val upperLimit = optionState.upperLimit!!
     var priceView = optionState.price
     var price0 = priceView * amountView
+
+    LaunchedEffect(price0) {
+        onPriceChange(key, price0)
+        onOptionChange(
+            key,
+            OptionReserved(
+                id = option.id,
+                name = option.name,
+                amount = amountView,
+                price = price0
+            )
+        )
+    }
+
+    DisposableEffect(key) {
+        onDispose {
+            onPriceChange(key, 0)
+            onOptionChange(
+                key,
+                OptionReserved(
+                    0,
+                    "",
+                    0,
+                    0
+                )
+            )
+        }
+    }
 
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -293,29 +369,61 @@ fun OptionWithAmount(
 @Composable
 fun MergedOptions(
     modifier: Modifier = Modifier,
-    options: List<OptionState>
+    options: List<OptionState>,
+    onPriceChange: (String, Int) -> Unit,
+    onOptionChange: (String, OptionReserved) -> Unit
 ) {
-    var price01 by remember { mutableIntStateOf(0) }
-    var price02 by remember { mutableIntStateOf(0) }
-    var mergeNumberCounter by remember { mutableIntStateOf(0) }
-    var optionIndex by remember { mutableIntStateOf(-1) }
-    for (option in options) {
-        optionIndex++
-        if (option.mergeGroup == mergeNumberCounter && option.amount == null) {
-            MergedOptionsWithoutAmount(
-                options = options,
-                mergeGroupNumber = mergeNumberCounter
+    val mergedGroups = remember(options) {
+        options.groupBy { it.mergeGroup }
+            .filterKeys { it != null }
+            .toList()
+            .sortedBy { (groupNumber, _) -> groupNumber }
+    }
+
+    mergedGroups.forEach { (groupNumber, groupOptions) ->
+        val groupKey = "merged_${groupNumber}"
+        val hasAmount = groupOptions.any { it.amount != null }
+
+        // State hoisted to parent component
+        var selectedIndex by remember(groupKey) { mutableIntStateOf(0) }
+        var currentAmount by remember(groupKey) {
+            mutableIntStateOf(
+                groupOptions.firstOrNull()?.amount ?: 1
             )
-            mergeNumberCounter++
+        }
+
+        if (hasAmount) {
+            MergedOptionsWithAmount(
+                modifier = modifier,
+                options = groupOptions,
+                mergeGroupNumber = groupNumber!!,
+                selectedIndex = selectedIndex,
+                currentAmount = currentAmount,
+                onSelectionChange = { newIndex ->
+                    selectedIndex = newIndex
+                    // Reset amount when option changes
+                    currentAmount = groupOptions[newIndex].amount ?: 1
+                },
+                onAmountChange = { newAmount ->
+                    currentAmount = newAmount
+                },
+                key = groupKey,
+                onPriceChange = onPriceChange,
+                onOptionChange = onOptionChange
+            )
         } else {
-            if (option.mergeGroup == mergeNumberCounter) {
-                MergedOptionsWithAmount(
-                    options = options,
-                    mergeGroupNumber = mergeNumberCounter,
-                    optionIndex = optionIndex
-                )
-                mergeNumberCounter++
-            }
+            MergedOptionsWithoutAmount(
+                modifier = modifier,
+                options = groupOptions,
+                mergeGroupNumber = groupNumber!!,
+                selectedIndex = selectedIndex,
+                onSelectionChange = { newIndex ->
+                    selectedIndex = newIndex
+                },
+                key = groupKey,
+                onPriceChange = onPriceChange,
+                onOptionChange = onOptionChange
+            )
         }
     }
 }
@@ -323,43 +431,29 @@ fun MergedOptions(
 @Composable
 fun NotMergedOptions(
     modifier: Modifier = Modifier,
-    options: List<OptionState>
+    options: List<OptionState>,
+    onPriceChange: (String, Int) -> Unit,
+    onOptionChange: (String, OptionReserved) -> Unit
 ) {
     for (option in options) {
+        val key = "option_${option.id}"
         if (option.mergeGroup == null && option.amount == null) {
             OptionWithoutAmount(
-                option = option
+                option = option,
+                key = key,
+                onPriceChange = onPriceChange,
+                onOptionChange = onOptionChange
             )
         } else {
             if (option.mergeGroup == null) {
                 OptionWithAmount(
-                    option = option
+                    option = option,
+                    key = key,
+                    onPriceChange = onPriceChange,
+                    onOptionChange = onOptionChange
                 )
             }
         }
-    }
-}
-
-@Composable
-fun MergedOptionsWithoutAmount(
-    modifier: Modifier = Modifier,
-    options: List<OptionState>,
-    mergeGroupNumber: Int
-) {
-    val numberList = createNumberList(
-        options = options, mergeGroupNumber = mergeGroupNumber
-    )
-
-    Row(
-        modifier = modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        var index = dropdownMenu(options = options, mergedGroupNumber = mergeGroupNumber)
-        var priceView = numberList[index]
-        PriceTextView(
-            price = priceView
-        )
     }
 }
 
@@ -368,39 +462,129 @@ fun MergedOptionsWithAmount(
     modifier: Modifier = Modifier,
     options: List<OptionState>,
     mergeGroupNumber: Int,
-    optionIndex: Int
+    selectedIndex: Int,          // Controlled from parent
+    currentAmount: Int,          // Controlled from parent
+    onSelectionChange: (Int) -> Unit,  // Dropdown callback
+    onAmountChange: (Int) -> Unit,     // Increment/Decrement callback
+    onOptionChange: (String, OptionReserved) -> Unit,
+    key: String,
+    onPriceChange: (String, Int) -> Unit
 ) {
-    val optionState: OptionState = options[optionIndex]
-    var amountView by remember { mutableIntStateOf(optionState.amount!!) }
-    val lowerLimit = optionState.lowerLimit!!
-    val upperLimit = optionState.upperLimit!!
-    val numberList = createNumberList(
-        options = options, mergeGroupNumber = mergeGroupNumber
-    )
+    val option = options[selectedIndex]
+    val numberList = createNumberList(options, mergeGroupNumber)
+    val currentPrice = numberList[selectedIndex] * currentAmount
+
+    LaunchedEffect(currentPrice) {
+        onPriceChange(key, currentPrice)
+        onOptionChange(
+            key,
+            OptionReserved(
+                id = option.id,
+                name = option.name,
+                amount = currentAmount,
+                price = currentPrice
+            )
+        )
+    }
+
+    DisposableEffect(key) {
+        onDispose {
+            onPriceChange(key, 0)
+            onOptionChange(
+                key,
+                OptionReserved(
+                    0,
+                    "",
+                    0,
+                    0
+                )
+            )
+        }
+    }
 
     Row(
         modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
         verticalAlignment = Alignment.CenterVertically
     ) {
-        var index = dropdownMenu(options = options, mergedGroupNumber = mergeGroupNumber)
-        var priceView = numberList[index]
-        var price0 = priceView * amountView
+        DropdownMenuSelector(
+            options = options,
+            mergeGroupNumber = mergeGroupNumber,
+            selectedIndex = selectedIndex,
+            onSelectionChange = onSelectionChange
+        )
+
         IncrementSection(
-            amount = amountView,
+            amount = currentAmount,
             onDecrementClicked = {
-                if (amountView > lowerLimit) {
-                    amountView--
+                if (currentAmount > option.lowerLimit!!) {
+                    onAmountChange(currentAmount - 1)
                 }
             },
             onIncrementClicked = {
-                if (amountView < upperLimit) {
-                    amountView++
+                if (currentAmount < option.upperLimit!!) {
+                    onAmountChange(currentAmount + 1)
                 }
             }
         )
-        PriceTextView(
-            price = price0
+
+        PriceView(price = currentPrice)
+    }
+}
+
+@Composable
+fun MergedOptionsWithoutAmount(
+    modifier: Modifier = Modifier,
+    options: List<OptionState>,
+    mergeGroupNumber: Int,
+    selectedIndex: Int,          // Controlled from parent
+    onSelectionChange: (Int) -> Unit,  // Dropdown callback
+    key: String,
+    onPriceChange: (String, Int) -> Unit,
+    onOptionChange: (String, OptionReserved) -> Unit
+) {
+    val numberList = createNumberList(options, mergeGroupNumber)
+    val currentPrice = numberList[selectedIndex]
+
+    LaunchedEffect(currentPrice) {
+        onPriceChange(key, currentPrice)
+        onOptionChange(
+            key,
+            OptionReserved(
+                id = options[selectedIndex].id,
+                name = options[selectedIndex].name,
+                amount = options[selectedIndex].amount,
+                price = currentPrice
+            )
         )
+    }
+
+    DisposableEffect(key) {
+        onDispose {
+            onPriceChange(key, 0)
+            onOptionChange(
+                key,
+                OptionReserved(
+                    0,
+                    "",
+                    null,
+                    0
+                )
+            )
+        }
+    }
+
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        DropdownMenuSelector(
+            options = options,
+            mergeGroupNumber = mergeGroupNumber,
+            selectedIndex = selectedIndex,
+            onSelectionChange = onSelectionChange
+        )
+        PriceView(price = currentPrice)
     }
 }

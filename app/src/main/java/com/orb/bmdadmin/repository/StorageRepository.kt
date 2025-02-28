@@ -60,6 +60,23 @@ class StorageRepository() {
             }
     }
 
+    fun Map<String, Any?>.toOptionState(): OptionState? {
+        return try {
+            OptionState(
+                id = (this["id"] as Long).toInt(), // Long → Int
+                name = this["name"] as String,
+                price = (this["price"] as Long).toInt(),
+                amount = (this["amount"] as? Long)?.toInt(),
+                upperLimit = (this["upperLimit"] as? Long)?.toInt(),
+                lowerLimit = (this["lowerLimit"] as? Long)?.toInt(),
+                mergeGroup = (this["mergeGroup"] as? Long)?.toInt(),
+                mergeId = (this["mergeId"] as? Long)?.toInt()
+            )
+        } catch (e: Exception) {
+            null
+        }
+    }
+
 
     fun getFoodList(): Flow<Resources<List<Foods>>> = callbackFlow {
         var snapshotStateListener: ListenerRegistration? = null
@@ -69,7 +86,25 @@ class StorageRepository() {
                 .orderBy("id", Query.Direction.DESCENDING)
                 .addSnapshotListener { snapshot, e ->
                     val response = if (snapshot != null) {
-                        val foods = snapshot.toObjects(Foods::class.java)
+                        val foods = snapshot.documents.mapNotNull { document ->
+                            val data = document.data ?: return@mapNotNull null
+
+                            // Convert options maps to OptionState
+                            @Suppress("UNCHECKED_CAST")
+                            val options = (data["options"] as? List<Map<String, Any?>>)
+                                ?.mapNotNull { it.toOptionState() }
+
+                            Foods(
+                                id = (data["id"] as Long).toInt(), // Convert Long → Int
+                                imgUrl = data["imgUrl"] as String,
+                                foodName = data["foodName"] as String,
+                                price = (data["price"] as Long).toInt(), // Handle price
+                                availability = data["availability"] as Boolean,
+                                amount = (data["amount"] as? Long)?.toInt(), // Nullable field
+                                options = options,
+                                documentId = document.id
+                            )
+                        }
                         Resources.Success(data = foods)
                     } else {
                         Resources.Error(throwable = e?.cause)
@@ -91,11 +126,30 @@ class StorageRepository() {
         onError: (Throwable?) -> Unit,
         onSuccess: (Foods?) -> Unit
     ) {
-        foodsRef
-            .document(foodId)
-            .get()
-            .addOnSuccessListener {
-                onSuccess.invoke(it?.toObject(Foods::class.java))
+        foodsRef.document(foodId).get()
+            .addOnSuccessListener { document ->
+                val data = document.data ?: run {
+                    onSuccess.invoke(null)
+                    return@addOnSuccessListener
+                }
+
+                // Convert nested options maps to OptionState
+                @Suppress("UNCHECKED_CAST")
+                val options = (data["options"] as? List<Map<String, Any?>>)?.mapNotNull { map ->
+                    map.toOptionState() // Use the extension function from earlier
+                }
+
+                val food = Foods(
+                    id = (data["id"] as Long).toInt(), // Convert Long → Int
+                    imgUrl = data["imgUrl"] as String,
+                    foodName = data["foodName"] as String,
+                    price = (data["price"] as Long).toInt(), // Handle price
+                    availability = data["availability"] as Boolean,
+                    amount = (data["amount"] as? Long)?.toInt(), // Nullable field
+                    options = options,
+                    documentId = document.id
+                )
+                onSuccess.invoke(food)
             }
             .addOnFailureListener { result ->
                 onError.invoke(result.cause)
@@ -113,6 +167,30 @@ class StorageRepository() {
         onComplete: (Boolean) -> Unit
     ) {
         val documentId = foodsRef.document().id
+        val optionsData = options?.map { option ->
+            hashMapOf(
+                "id" to option.id,
+                "name" to option.name,
+                "price" to option.price,
+                "amount" to option.amount,
+                "upperLimit" to option.upperLimit,
+                "lowerLimit" to option.lowerLimit,
+                "mergeGroup" to option.mergeGroup,
+                "mergeId" to option.mergeId
+            )
+        }
+
+        val foodData = hashMapOf(
+            "id" to id,
+            "imgUrl" to imgUrl,
+            "foodName" to foodName,
+            "price" to price,
+            "availability" to availability,
+            "amount" to amount,
+            "options" to optionsData,
+            "documentId" to documentId
+        )
+
         val food = Foods(
             id,
             imgUrl,
@@ -125,17 +203,28 @@ class StorageRepository() {
         )
         foodsRef
             .document(documentId)
-            .set(food)
+            .set(foodData)
             .addOnCompleteListener { result ->
                 onComplete.invoke(result.isSuccessful)
             }
     }
 
-    fun deleteFood(foodId: String, onComplete: (Boolean) -> Unit) {
-        foodsRef.document(foodId)
-            .delete()
-            .addOnCompleteListener {
-                onComplete.invoke(it.isSuccessful)
+    fun deleteFood(foodId: String, imgUrl: String, onComplete: (Boolean) -> Unit) {
+        val storage = FirebaseStorage.getInstance()
+        val imageRef = storage.getReferenceFromUrl(imgUrl) // Get reference from URL
+
+        imageRef.delete()
+            .addOnSuccessListener {
+                // 2. Delete the Firestore document after image deletion
+                foodsRef.document(foodId)
+                    .delete()
+                    .addOnCompleteListener { task ->
+                        onComplete.invoke(task.isSuccessful)
+                    }
+            }
+            .addOnFailureListener { e ->
+                Log.e("Delete", "Image deletion failed: ${e.message}")
+                onComplete.invoke(false)
             }
     }
 
@@ -150,14 +239,27 @@ class StorageRepository() {
         documentId: String,
         onResult: (Boolean) -> Unit
     ) {
-        val updateData = myHashMapOf(
+        val optionsData = options?.map { option ->
+            hashMapOf(
+                "id" to option.id,
+                "name" to option.name,
+                "price" to option.price,
+                "amount" to option.amount,
+                "upperLimit" to option.upperLimit,
+                "lowerLimit" to option.lowerLimit,
+                "mergeGroup" to option.mergeGroup,
+                "mergeId" to option.mergeId
+            )
+        }
+
+        val updateData = hashMapOf<String, Any?>(
             "id" to id,
             "imgUrl" to imgUrl,
             "foodName" to foodName,
             "price" to price,
             "availability" to availability,
             "amount" to amount,
-            "options" to options
+            "options" to optionsData
         )
 
         foodsRef.document(documentId)

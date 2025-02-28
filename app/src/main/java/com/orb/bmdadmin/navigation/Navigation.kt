@@ -120,7 +120,7 @@ fun NavGraphBuilder.homeGraph(
                 navToAddFoodScreen = {
                     navController.navigate(HomeRoutes.AddFood.name)
                 },
-                onEditFoodClicked = { food ->
+                onEditFoodClicked = { food, string ->
                     navController.navigate(HomeRoutes.AddFood.name)
                 },
                 onSearchButtonClicked = {}
@@ -128,7 +128,7 @@ fun NavGraphBuilder.homeGraph(
         }
 
         composable(HomeRoutes.AddFood.name) {
-            AddFoodItemScreen {
+            AddFoodItemScreen(imgUrl = "") {
                 navController.navigateUp()
             }
         }

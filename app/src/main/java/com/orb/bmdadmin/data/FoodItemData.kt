@@ -304,8 +304,8 @@ val FoodItemsData = mutableListOf(
                 name = "Ice cream plate",
                 price = 1500,
                 amount = 1,
-                upperLimit = null,//6
-                lowerLimit = null,//1
+                upperLimit = 6,
+                lowerLimit = 1,
                 mergeGroup = 0,
                 mergeId = 0
             ),
@@ -314,8 +314,8 @@ val FoodItemsData = mutableListOf(
                 name = "Ice cream medium cup",
                 price = 1000,
                 amount = 1,
-                upperLimit = null,//6
-                lowerLimit = null,//1
+                upperLimit = 6,
+                lowerLimit = 1,
                 mergeGroup = 0,
                 mergeId = 1
             ),
@@ -324,8 +324,8 @@ val FoodItemsData = mutableListOf(
                 name = "Ice cream small cup",
                 price = 700,
                 amount = 1,
-                upperLimit = null,//6
-                lowerLimit = null,//1
+                upperLimit = 6,
+                lowerLimit = 1,
                 mergeGroup = 0,
                 mergeId = 2
             ),

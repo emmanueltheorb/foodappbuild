@@ -33,30 +33,23 @@ import com.orb.bmdadmin.ui.components.sections.createNameList
 
 
 @Composable
-fun dropdownMenu(
+fun DropdownMenuSelector(
     modifier: Modifier = Modifier,
     options: List<OptionState>,
-    mergedGroupNumber: Int,
+    mergeGroupNumber: Int,
+    selectedIndex: Int,  // Hoisted state
+    onSelectionChange: (Int) -> Unit,  // Callback for parent
     width: Dp = 110.dp
-): Int {
-    val mergedGroupNumber = mergedGroupNumber
-    var mergeIndex by remember {
-        mutableIntStateOf(0)
+) {
+    val nameList = remember(options, mergeGroupNumber) {
+        createNameList(options, mergeGroupNumber)
     }
-    val nameList: MutableList<String> = createNameList(
-        options = options,
-        mergeGroupNumber = mergedGroupNumber
-    )
-    var selectedText by remember {
-        mutableStateOf(nameList[0])
-    }
-    var isExpanded by remember {
-        mutableStateOf(false)
-    }
+
+    var isExpanded by remember { mutableStateOf(false) }
 
     OutlinedCard(
         modifier = Modifier.padding(16.dp),
-        border = BorderStroke(width = 2.dp, color = MaterialTheme.colorScheme.onBackground),
+        border = BorderStroke(2.dp, MaterialTheme.colorScheme.onBackground),
         colors = CardColors(
             containerColor = MaterialTheme.colorScheme.tertiaryContainer,
             contentColor = MaterialTheme.colorScheme.onBackground,
@@ -65,43 +58,32 @@ fun dropdownMenu(
         )
     ) {
         Row(
-            horizontalArrangement = Arrangement.SpaceEvenly,
-            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
                 .width(width)
                 .height(50.dp)
                 .padding(5.dp)
-                .clickable {
-                    isExpanded = true
-                }
+                .clickable { isExpanded = true },
+            horizontalArrangement = Arrangement.SpaceEvenly,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = selectedText,
-                color = MaterialTheme.colorScheme.onBackground,
-                style = MaterialTheme.typography.bodySmall
+                text = nameList.getOrNull(selectedIndex) ?: "Select",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onBackground
             )
             Image(
-                painter = painterResource(id = R.drawable.baseline_keyboard_arrow_down_24),
-                contentDescription = ""
+                painter = painterResource(R.drawable.baseline_keyboard_arrow_down_24),
+                contentDescription = "Dropdown arrow"
             )
         }
 
         DropdownMenu(
-            modifier = modifier.background(MaterialTheme.colorScheme.tertiaryContainer),
             expanded = isExpanded,
-            onDismissRequest = { isExpanded = false }
+            onDismissRequest = { isExpanded = false },
+            modifier = modifier.background(MaterialTheme.colorScheme.tertiaryContainer)
         ) {
             nameList.forEachIndexed { index, text ->
                 DropdownMenuItem(
-                    modifier = modifier.background(MaterialTheme.colorScheme.tertiaryContainer),
-                    colors = MenuItemColors(
-                        textColor = MaterialTheme.colorScheme.onBackground,
-                        leadingIconColor = MaterialTheme.colorScheme.onBackground,
-                        trailingIconColor = MaterialTheme.colorScheme.onBackground,
-                        disabledTextColor = MaterialTheme.colorScheme.onBackground,
-                        disabledLeadingIconColor = MaterialTheme.colorScheme.onBackground,
-                        disabledTrailingIconColor = MaterialTheme.colorScheme.onBackground
-                    ),
                     text = {
                         Text(
                             text = text,
@@ -109,13 +91,19 @@ fun dropdownMenu(
                         )
                     },
                     onClick = {
-                        selectedText = nameList[index]
+                        onSelectionChange(index)
                         isExpanded = false
-                        mergeIndex = index
-                    }
+                    },
+                    colors = MenuItemColors(
+                        textColor = MaterialTheme.colorScheme.onBackground,
+                        leadingIconColor = MaterialTheme.colorScheme.onBackground,
+                        trailingIconColor = MaterialTheme.colorScheme.onBackground,
+                        disabledTextColor = MaterialTheme.colorScheme.onBackground,
+                        disabledLeadingIconColor = MaterialTheme.colorScheme.onBackground,
+                        disabledTrailingIconColor = MaterialTheme.colorScheme.onBackground
+                    )
                 )
             }
         }
     }
-    return mergeIndex
 }

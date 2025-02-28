@@ -34,8 +34,8 @@ class FoodListViewModel (
         }
     }
 
-    fun deleteFood(documentId: String) {
-        repository.deleteFood(documentId) {
+    fun deleteFood(documentId: String, imgUrl: String) {
+        repository.deleteFood(documentId, imgUrl) {
             foodListScreenState = foodListScreenState.copy(noteDeletedStatus = it)
         }
     }

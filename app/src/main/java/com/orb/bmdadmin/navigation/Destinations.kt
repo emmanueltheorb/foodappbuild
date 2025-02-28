@@ -39,6 +39,7 @@ sealed class Dest {
 
     @Serializable
     data class AddFoodScreen(
-        val foodForEdit: Foods?
+        val foodForEdit: Foods?,
+        val imgUrl: String
     ): Dest()
 }

@@ -43,12 +43,15 @@ class AddFoodViewModel(
     val foodList = SnapshotStateList<FoodItemInput>()
     val foodIndex = 0
     val updateIndexPosition: MutableState<Int?> = mutableStateOf(null)
+    val imageUrl = foodForEdit?.imgUrl
 
     val optionInputs = mutableStateListOf<OptionStateInput>()
 
     val mergedItemsContainers = mutableStateMapOf<Int, MutableList<OptionState>>()
 
     init {
+        foodList.clear()
+        optionInputs.clear()
         if (foodForEdit == null) {
             resetState()
             addNewFood()
@@ -72,6 +75,8 @@ class AddFoodViewModel(
         )
     }
 
+    var optionState: List<OptionState> = emptyList()
+
     suspend fun addFoodState() {
         val foodInput = foodList.last()
         val id = repository.getFoodId()
@@ -87,7 +92,7 @@ class AddFoodViewModel(
                     price = foodInput.price.value,
                     availability = foodInput.availability.value,
                     amount = foodInput.amount.value,
-                    options = foodInput.options.value
+                    options = optionState
                 )
 
                 if (hasUser) {
@@ -171,6 +176,7 @@ class AddFoodViewModel(
     fun addNewOptionInput() {
         optionInputs.add(
             OptionStateInput(
+                id = mutableStateOf(optionInputs.size),
                 name = mutableStateOf(""),
                 price = mutableIntStateOf(0),
                 amount = mutableStateOf(null),
@@ -185,7 +191,7 @@ class AddFoodViewModel(
     fun getOptionStates(): List<OptionState> {
         return optionInputs.mapIndexed { index, input ->
             OptionState(
-                id = index,
+                id = input.id.value,
                 name = input.name.value,
                 price = input.price.value,
                 amount = input.amount.value,
@@ -202,6 +208,7 @@ class AddFoodViewModel(
         if (options != null) {
             inputOptions = options.map { option ->
                 OptionStateInput(
+                    id = mutableStateOf(option.id),
                     name = mutableStateOf(option.name),
                     price = mutableStateOf(option.price),
                     amount = mutableStateOf(option.amount),
@@ -258,12 +265,14 @@ class AddFoodViewModel(
     }
 
     fun deleteOption(options: List<OptionState>) {
-        for (option in options) {
-            optionInputs.removeAt(option.id)
+        val idsToRemove = options.map { it.id }
+        optionInputs.removeAll { input ->
+            input.id.value in idsToRemove
         }
     }
 
     data class OptionStateInput(
+        val id: MutableState<Int>,
         val name: MutableState<String>,
         val price: MutableState<Int>,
         val amount: MutableState<Int?>,

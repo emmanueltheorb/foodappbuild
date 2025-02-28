@@ -49,6 +49,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil3.compose.AsyncImage
 import coil3.compose.rememberAsyncImagePainter
 import coil3.request.ImageRequest
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
+import com.bumptech.glide.integration.compose.placeholder
 import com.orb.bmdadmin.R
 import com.orb.bmdadmin.data.AddFoodViewModel
 import com.orb.bmdadmin.data.AddFoodViewModelFactory
@@ -64,15 +67,18 @@ import com.orb.bmdadmin.ui.components.rememberMultiSelectionState
 import com.orb.bmdadmin.ui.components.sections.BoxForCheckButton
 import com.orb.bmdadmin.ui.components.sections.OptionInputSection
 import kotlinx.coroutines.launch
+import java.net.URLDecoder
 
 @Composable
 fun AddFoodItemScreen(
     modifier: Modifier = Modifier,
     foodForEdit: Foods? = null,
+    imgUrl: String,
     onNavigate: () -> Unit
 ) {
     val addFoodViewModel: AddFoodViewModel =
         viewModel(factory = AddFoodViewModelFactory(foodForEdit))
+    val decodedImgUrl = URLDecoder.decode(addFoodViewModel.imageUrl, "UTF-8")
 
     val addFoodScreenState = addFoodViewModel.addFoodScreenState
     val scope = rememberCoroutineScope()
@@ -179,6 +185,9 @@ fun AddFoodItemScreen(
             }
         }
     }
+    LaunchedEffect(optionList) {
+        addFoodViewModel.optionState = addFoodViewModel.getOptionStates().toMutableStateList()
+    }
     var selectedImage by remember { mutableStateOf<Uri?>(foodInput.imgUri.value) }
     val launcher =
         rememberLauncherForActivityResult(contract = ActivityResultContracts.GetContent()) { uri ->
@@ -243,7 +252,7 @@ fun AddFoodItemScreen(
 
                 AvailableFoodItemInput(
                     foodImage = selectedImage,
-                    imageUrl = foodForEdit?.imgUrl ?: "",
+                    imageUrl = imgUrl,
                     foodName = foodInput.foodName,
                     foodPrice = foodInput.price,
                     onAddImageClicked = {
@@ -316,6 +325,7 @@ private fun AvailableFoodItemInput(
     }
 }
 
+@OptIn(ExperimentalGlideComposeApi::class)
 @Composable
 private fun FoodImageInput(
     modifier: Modifier = Modifier,
@@ -341,13 +351,13 @@ private fun FoodImageInput(
             )
         }
         if (imageUrl.isNotEmpty()) {
-            AsyncImage(
+            GlideImage(
                 modifier = modifier.fillMaxSize(),
-                model = ImageRequest.Builder(LocalContext.current)
-                    .data(imageUrl)
-                    .build(),
+                model = imageUrl,
                 contentDescription = null,
-                contentScale = ContentScale.Crop
+                contentScale = ContentScale.Crop,
+                loading = placeholder(R.drawable.right_ic),
+                failure = placeholder(R.drawable.ic_close)
             )
         }
         if (foodImage == null && imageUrl.isEmpty()) {

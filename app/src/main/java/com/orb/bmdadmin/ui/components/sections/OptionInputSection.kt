@@ -665,7 +665,13 @@ fun OptionsPreviewSection(
         OptionsSection(
             modifier
                 .verticalScroll(scrollState),
-            options = options.toMutableList()
+            options = options.toMutableList(),
+            onPriceChange = { key, price ->
+
+            },
+            onOptionChange = { key, option ->
+
+            }
         )
     }
 }

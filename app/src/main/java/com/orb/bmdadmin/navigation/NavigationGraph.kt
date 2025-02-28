@@ -116,10 +116,10 @@ fun NavGraphBuilder.home1Graph(
         composable<Dest.FoodListScreen> {
             FoodListScreen(
                 navToAddFoodScreen = {
-                    navController.navigate(Dest.AddFoodScreen(null))
+                    navController.navigate(Dest.AddFoodScreen(null, ""))
                 },
-                onEditFoodClicked = { food ->
-                    navController.navigate(Dest.AddFoodScreen(food))
+                onEditFoodClicked = { food, string ->
+                    navController.navigate(Dest.AddFoodScreen(food, string))
                 },
                 onSearchButtonClicked = {  }
             )
@@ -133,6 +133,7 @@ fun NavGraphBuilder.home1Graph(
             val addScreen: Dest.AddFoodScreen = it.toRoute<Dest.AddFoodScreen>()
             AddFoodItemScreen(
                 foodForEdit = addScreen.foodForEdit,
+                imgUrl = addScreen.imgUrl,
                 onNavigate = {
                     navController.navigateUp()
                 }

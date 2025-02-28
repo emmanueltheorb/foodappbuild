@@ -43,18 +43,20 @@ import com.orb.bmdadmin.ui.components.FoodListItem
 import com.orb.bmdadmin.ui.components.PopUpForMergeAndRemove
 import com.orb.bmdadmin.ui.components.SearchButton
 import com.orb.bmdadmin.ui.theme.AppTheme
+import java.net.URLEncoder
 
 @Composable
 fun FoodListScreen(
     modifier: Modifier = Modifier,
     foodListViewModel: FoodListViewModel? = viewModel(),
     navToAddFoodScreen: () -> Unit,
-    onEditFoodClicked: (food: Foods) -> Unit,
+    onEditFoodClicked: (food: Foods, imgUrl: String) -> Unit,
     onSearchButtonClicked: () -> Unit
 ) {
     val screenState = foodListViewModel?.foodListScreenState ?: FoodListScreenState()
     var showPopUp by remember { mutableStateOf(false) }
     var foodForEdit: Foods? by remember { mutableStateOf(null) }
+    var imgUrl by remember { mutableStateOf("") }
     val onAmountChange: (Int?) -> Unit = {
 
     }
@@ -74,8 +76,9 @@ fun FoodListScreen(
         Content1(
             modifier.fillMaxSize(),
             screenState = screenState,
-            foodForEdit = { food ->
+            foodForEdit = { food, string ->
                 foodForEdit = food
+                imgUrl = string
             },
             onFoodInListClicked = {
                 showPopUp = true
@@ -94,12 +97,17 @@ fun FoodListScreen(
                 firstString = "Edit",
                 secondString = "Delete",
                 onMergeClicked = {
-                    onEditFoodClicked.invoke(foodForEdit!!)
+                    onEditFoodClicked.invoke(
+                        foodForEdit!!.copy(
+                            imgUrl = URLEncoder.encode(foodForEdit!!.imgUrl, "UTF-8")
+                        ),
+                        imgUrl
+                    )
                     showPopUp = false
                                  }
                 ,
                 onRemoveClicked = {
-                    foodListViewModel?.deleteFood(foodForEdit!!.documentId)
+                    foodListViewModel?.deleteFood(foodForEdit!!.documentId, foodForEdit!!.imgUrl)
                     showPopUp = false
                 }
             )
@@ -111,7 +119,7 @@ fun FoodListScreen(
 private fun Content1(
     modifier: Modifier = Modifier,
     screenState: FoodListScreenState,
-    foodForEdit: (Foods) -> Unit,
+    foodForEdit: (Foods, String) -> Unit,
     onAmountChange: (Int?) -> Unit,
     onAvailabilityChange: (Boolean) -> Unit,
     onFoodInListClicked: () -> Unit,
@@ -189,7 +197,7 @@ private fun SectionHeader(
 private fun FoodsColumn(
     modifier: Modifier = Modifier,
     data: List<Foods>,
-    foodForEdit: (Foods) -> Unit,
+    foodForEdit: (Foods, String) -> Unit,
     onAmountChange: (Int?) -> Unit,
     onAvailabilityChange: (Boolean) -> Unit,
     onFoodInListClicked: () -> Unit
@@ -202,7 +210,7 @@ private fun FoodsColumn(
             FoodListItem(
                 data = item,
                 onFoodInListClicked = {
-                    foodForEdit(item)
+                    foodForEdit(item, item.imgUrl)
                     onFoodInListClicked.invoke()
                 },
                 onValueChange = onAmountChange,
@@ -253,18 +261,5 @@ fun AddFoodButton(
                 modifier = modifier.size(14.dp)
             )
         }
-    }
-}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-fun FoodListScreenPreview() {
-    AppTheme {
-        FoodListScreen(
-            onSearchButtonClicked = {},
-            foodListViewModel = null,
-            navToAddFoodScreen = {},
-            onEditFoodClicked = {}
-        )
     }
 }
