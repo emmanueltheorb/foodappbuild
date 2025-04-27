@@ -1,6 +1,7 @@
 package com.orb.bmdadmin.login
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -35,22 +36,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.google.firebase.Firebase
-import com.google.firebase.firestore.CollectionReference
-import com.google.firebase.firestore.firestore
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.orb.bmdadmin.ui.components.MyLoginTextField
+import com.orb.bmdadmin.ui.components.OtpTextField
 import com.orb.bmdadmin.ui.theme.AppTheme
 
 @Composable
 fun LoginScreen(
     modifier: Modifier = Modifier,
-    loginViewModel: LoginViewModel? = null,
+    loginViewModel: LoginViewModel = hiltViewModel(),
     onNavToHomePage: () -> Unit,
     onNavToSignUpPage: () -> Unit,
     onNavToOtpPage: () -> Unit
 ) {
-    val loginScreenState = loginViewModel?.loginScreenState
-    val isError = loginScreenState?.loginError != null
+    val loginScreenState = loginViewModel.loginScreenState
+    val isError = loginScreenState.loginError != null
     val context = LocalContext.current
 
     Column(
@@ -68,22 +68,22 @@ fun LoginScreen(
         )
         if (isError) {
             Text(
-                text = loginScreenState?.loginError ?: "Unknown Error",
+                text = loginScreenState.loginError,
                 color = Color.Red
             )
         }
         MyLoginTextField(
-            textValue = loginScreenState?.userName ?: "",
+            textValue = loginScreenState.userName,
             onValueChange = {
-                loginViewModel?.onUserNameChange(it)
+                loginViewModel.onUserNameChange(it)
             },
             placeholder = "Email",
 //            isError = isError
         )
         MyLoginTextField(
-            textValue = loginScreenState?.password ?: "",
+            textValue = loginScreenState.password,
             onValueChange = {
-                loginViewModel?.onPasswordChange(it)
+                loginViewModel.onPasswordChange(it)
             },
             placeholder = "Password",
             visualTransformation = PasswordVisualTransformation(),
@@ -91,7 +91,7 @@ fun LoginScreen(
         )
         Button(
             onClick = {
-                loginViewModel?.loginUser(context)
+                loginViewModel.loginUser(context)
             },
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.onBackground,
@@ -107,25 +107,22 @@ fun LoginScreen(
         ) {
             Text(text = "Don't have an account?")
             Spacer(modifier.size(8.dp))
-            TextButton(
-                modifier = modifier.wrapContentHeight(),
-                onClick = { onNavToSignUpPage.invoke() }
-            ) {
-                Text(
-                    text = "Sign Up",
-                    color = Color.Green
-                )
-            }
+            Text(
+                modifier = modifier
+                    .clickable(onClick = onNavToSignUpPage),
+                text = "Sign Up",
+                color = Color.Green
+            )
         }
-        if (loginScreenState?.isLoading == true) {
+        if (loginScreenState.isLoading == true) {
             CircularProgressIndicator(
                 color = MaterialTheme.colorScheme.onBackground
             )
         }
 
-        LaunchedEffect(loginViewModel?.hasUser) {
-            if (loginViewModel?.hasUser == true) {
-                loginViewModel.checkIfUserIsAdmin() { isAdmin ->
+        LaunchedEffect(loginViewModel.hasUser) {
+            if (loginViewModel.hasUser == true) {
+                loginViewModel.checkIfUserIsAdmin { isAdmin ->
                     if (isAdmin) {
                         onNavToHomePage.invoke()
                     } else {
@@ -141,13 +138,13 @@ fun LoginScreen(
 @Composable
 fun SignUpScreen(
     modifier: Modifier = Modifier,
-    loginViewModel: LoginViewModel? = null,
+    loginViewModel: LoginViewModel = hiltViewModel(),
     onNavToHomePage: () -> Unit,
     onNavToLoginPage: () -> Unit,
     onNavToOtpPage: () -> Unit
 ) {
-    val loginScreenState = loginViewModel?.loginScreenState
-    val isError = loginScreenState?.signUpError != null
+    val loginScreenState = loginViewModel.loginScreenState
+    val isError = loginScreenState.signUpError != null
     val context = LocalContext.current
 
     Column(
@@ -165,37 +162,37 @@ fun SignUpScreen(
         )
         if (isError) {
             Text(
-                text = loginScreenState?.signUpError ?: "Unknown Error",
+                text = loginScreenState.signUpError,
                 style = MaterialTheme.typography.labelSmall,
                 color = Color.Red
             )
         }
         MyLoginTextField(
             placeholder = "Email",
-            textValue = loginScreenState?.userNameSignUp ?: "",
+            textValue = loginScreenState.userNameSignUp,
             onValueChange = {
-                loginViewModel?.onUserNameSignUpChange(it)
+                loginViewModel.onUserNameSignUpChange(it)
             }
         )
         MyLoginTextField(
             placeholder = "Password",
-            textValue = loginScreenState?.passwordSignUp ?: "",
+            textValue = loginScreenState.passwordSignUp,
             onValueChange = {
-                loginViewModel?.onPasswordSignUpChange(it)
+                loginViewModel.onPasswordSignUpChange(it)
             },
             visualTransformation = PasswordVisualTransformation()
         )
         MyLoginTextField(
             placeholder = "Confirm Password",
-            textValue = loginScreenState?.confirmPasswordSignUp ?: "",
+            textValue = loginScreenState.confirmPasswordSignUp,
             onValueChange = {
-                loginViewModel?.onConfirmPasswordSignUpChange(it)
+                loginViewModel.onConfirmPasswordSignUpChange(it)
             },
             visualTransformation = PasswordVisualTransformation()
         )
         Button(
             onClick = {
-                loginViewModel?.createUser(context)
+                loginViewModel.createUser(context)
             },
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.onBackground,
@@ -211,21 +208,21 @@ fun SignUpScreen(
         ) {
             Text(text = "Already have an account?")
             Spacer(modifier.size(8.dp))
-            TextButton(onClick = { onNavToLoginPage.invoke() }) {
-                Text(
-                    text = "Login",
-                    color = Color.Green
-                )
-            }
+            Text(
+                modifier = modifier
+                    .clickable(onClick = onNavToLoginPage),
+                text = "Login",
+                color = Color.Green
+            )
         }
-        if (loginScreenState?.isLoading == true) {
+        if (loginScreenState.isLoading == true) {
             CircularProgressIndicator(
                 color = MaterialTheme.colorScheme.onBackground
             )
         }
 
-        LaunchedEffect(loginViewModel?.hasUser) {
-            if (loginViewModel?.hasUser == true) {
+        LaunchedEffect(loginViewModel.hasUser) {
+            if (loginViewModel.hasUser == true) {
                 loginViewModel.checkIfUserIsAdmin() { isAdmin ->
                     if (isAdmin) {
                         onNavToHomePage.invoke()
@@ -241,7 +238,7 @@ fun SignUpScreen(
 @Composable
 fun OTPVerificationScreen(
     modifier: Modifier = Modifier,
-    loginViewModel: LoginViewModel? = null,
+    loginViewModel: LoginViewModel = hiltViewModel(),
     onNavToHomePage: () -> Unit
 ) {
     val context = LocalContext.current
@@ -251,23 +248,16 @@ fun OTPVerificationScreen(
 
     // Check admin status in real-time
     LaunchedEffect(Unit) {
-        val userUid = loginViewModel?.currentUser?.uid ?: return@LaunchedEffect
+        val userUid = loginViewModel.currentUser?.uid ?: return@LaunchedEffect
 
-        loginViewModel.adminUidRef.document("code_generator")
-            .addSnapshotListener { document, _ ->
-                val adminUid = document?.getString("uid")
+        loginViewModel.adminControlRef.child("code_generator").get()
+            .addOnSuccessListener { snapshot ->
+                val adminUid = snapshot.child("uid").value.toString()
                 if (adminUid == userUid) {
                     isAdmin = true
-                    onNavToHomePage.invoke() // Automatically go to HomePage
+                    onNavToHomePage() // Automatically go to HomePage
                 }
             }
-
-//            loginViewModel.checkIfUserIsAdmin() { isAdminCheck ->
-//                if (isAdminCheck) {
-//                    isAdmin = isAdminCheck
-//                    onNavToHomePage.invoke()
-//                }
-//            }
     }
 
     if (!isAdmin) {
@@ -279,16 +269,16 @@ fun OTPVerificationScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            MyLoginTextField(
-                textValue = otp,
-                onValueChange = { otp = it },
-                placeholder = "8-Digit Code"
+            OtpTextField(
+                onOtpComplete = {
+                    otp = it
+                }
             )
             Button(
                 onClick = {
-                    loginViewModel?.verifyOTP(
+                    loginViewModel.verifyOTP(
                         context = context,
-                        inputCode = otp,
+                        inputCode = otp.toInt(),
                         onNavigateToHomePage = onNavToHomePage
                     )
                 },
@@ -301,39 +291,5 @@ fun OTPVerificationScreen(
             }
             errorMessage?.let { Text(it, color = Color.Red) }
         }
-    }
-}
-
-@Preview(showSystemUi = true)
-@Composable
-private fun LoginScreenPreview() {
-    AppTheme {
-        LoginScreen(
-            onNavToHomePage = TODO(),
-            onNavToSignUpPage = TODO(),
-            onNavToOtpPage = TODO()
-        )
-    }
-}
-
-@Preview(showSystemUi = true)
-@Composable
-private fun SignUpScreenPreview() {
-    AppTheme {
-        SignUpScreen(
-            onNavToHomePage = TODO(),
-            onNavToLoginPage = TODO(),
-            onNavToOtpPage = TODO()
-        )
-    }
-}
-
-@Preview(showSystemUi = true)
-@Composable
-private fun OtpScreenPreview() {
-    AppTheme {
-        OTPVerificationScreen(
-            onNavToHomePage = TODO()
-        )
     }
 }

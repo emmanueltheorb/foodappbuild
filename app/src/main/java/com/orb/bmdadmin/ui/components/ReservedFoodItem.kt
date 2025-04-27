@@ -89,11 +89,3 @@ private fun ReserveDescription(
         )
     }
 }
-
-//@Preview(showBackground = true, showSystemUi = true)
-//@Composable
-//fun ReservedFoodsScreenPreview() {
-//    AppTheme {
-//        ReservedFoodsScreen(onFoodItemClicked = {})
-//    }
-//}

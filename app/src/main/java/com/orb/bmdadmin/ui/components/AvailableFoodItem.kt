@@ -20,7 +20,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
+import com.bumptech.glide.integration.compose.GlideImage
 import com.orb.bmdadmin.data.FoodItemState
 
 @Composable
@@ -29,15 +32,15 @@ fun AvailableFoodItem(
     data: FoodItemState,
     onFoodItemClicked: () -> Unit
 ) {
-        Column(
-            verticalArrangement = Arrangement.spacedBy(4.dp),
-            modifier = modifier.clickable(onClick = onFoodItemClicked)
-        ) {
-            FoodImage(
-                foodImage = data.img
-            )
-            ItemDescription(name = data.foodName, price = data.price.toString())
-        }
+    Column(
+        verticalArrangement = Arrangement.spacedBy(4.dp),
+        modifier = modifier.clickable(onClick = onFoodItemClicked)
+    ) {
+        FoodImage(
+            foodImage = data.img
+        )
+        ItemDescription(name = data.foodName, price = data.price.toString())
+    }
 }
 
 //@Preview(showBackground = true, showSystemUi = true)
@@ -49,17 +52,42 @@ fun AvailableFoodItem(
 @Composable
 fun FoodImage(
     modifier: Modifier = Modifier,
+    height: Dp = 250.dp,
+    roundedBy: Dp = 16.dp,
     @DrawableRes foodImage: Int
 ) {
     Card(
         modifier = modifier
             .fillMaxWidth()
-            .height(250.dp),
-        shape = RoundedCornerShape(16.dp)
+            .height(height),
+        shape = RoundedCornerShape(roundedBy)
     ) {
         Image(
             modifier = modifier.fillMaxSize(),
             painter = painterResource(foodImage),
+            contentDescription = null,
+            contentScale = ContentScale.Crop
+        )
+    }
+}
+
+@OptIn(ExperimentalGlideComposeApi::class)
+@Composable
+fun FoodImageUrl(
+    modifier: Modifier = Modifier,
+    height: Dp = 250.dp,
+    roundedBy: Dp = 16.dp,
+    foodImage: String
+) {
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .height(height),
+        shape = RoundedCornerShape(roundedBy)
+    ) {
+        GlideImage(
+            modifier = modifier.fillMaxSize(),
+            model = foodImage,
             contentDescription = null,
             contentScale = ContentScale.Crop
         )

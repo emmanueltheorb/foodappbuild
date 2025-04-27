@@ -55,7 +55,6 @@ class AddFoodViewModel(
         if (foodForEdit == null) {
             resetState()
             addNewFood()
-            addNewOptionInput()
         } else {
             convertToFoodItemInput(foodForEdit)
         }
@@ -79,7 +78,10 @@ class AddFoodViewModel(
 
     suspend fun addFoodState() {
         val foodInput = foodList.last()
-        val id = repository.getFoodId()
+        var id = -1
+        repository.getFoodId(callback = {
+            id = it
+        })
 
         repository.uploadImageToFirebase(
             uri = foodInput.imgUri.value,
@@ -129,7 +131,7 @@ class AddFoodViewModel(
             price = foodInput.price.value,
             availability = foodInput.availability.value,
             amount = foodInput.amount.value,
-            options = foodInput.options.value
+            options = optionState
         )
 
         repository.updateFood(

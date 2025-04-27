@@ -7,18 +7,27 @@ import androidx.lifecycle.ViewModel
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.viewModelScope
-import com.google.firebase.Firebase
-import com.google.firebase.firestore.CollectionReference
-import com.google.firebase.firestore.firestore
+import com.google.firebase.auth.ktx.auth
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.ktx.database
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.MutableData
+import com.google.firebase.database.Transaction
+import com.google.firebase.ktx.Firebase
 import com.orb.bmdadmin.repository.AuthRepository
+import com.orb.bmdadmin.repository.StorageRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
-class LoginViewModel (
-    private val repository: AuthRepository = AuthRepository()
+@HiltViewModel
+class LoginViewModel @Inject constructor(
+    private val repository: AuthRepository,
+    private val storageRepository: StorageRepository
 ): ViewModel() {
     val currentUser = repository.currentUser
-    val adminUidRef: CollectionReference = Firebase
-        .firestore.collection("admin_control")
+    private val database = Firebase.database.reference
+    val adminControlRef = database.child("admin_control")
 
     val hasUser: Boolean
         get() = repository.hasUser()
@@ -111,41 +120,43 @@ class LoginViewModel (
         }
     }
     fun checkIfUserIsAdmin(
-        repository: AuthRepository = AuthRepository(),
         onResult: (Boolean) -> Unit
     ) {
-        val currentUser = repository.currentUser ?: return onResult(false)
+        val currentUser = Firebase.auth.currentUser ?: return onResult(false)
 
-        adminUidRef.document("code_generator")
-            .get()
-            .addOnSuccessListener { document ->
-                if (document.exists()) {
-                    val adminUid = document.getString("uid")
-                    onResult(adminUid == currentUser.uid)
-                } else {
-                    onResult(false)
-                }
+        adminControlRef.child("code_generator").get()
+            .addOnSuccessListener { snapshot ->
+                val adminUid = snapshot.child("uid").value.toString()
+                onResult(adminUid == currentUser.uid)
             }
             .addOnFailureListener {
                 onResult(false)
             }
     }
+
     fun verifyOTP(
-        repository: AuthRepository = AuthRepository(),
         context: Context,
-        inputCode: String,
+        inputCode: Int,
         onNavigateToHomePage: () -> Unit
     ) {
-        adminUidRef.document("latest_code")
-            .get()
-            .addOnSuccessListener { document ->
-                val correctCode = document.getString("code")
+        adminControlRef.child("latest_code").get()
+            .addOnSuccessListener { snapshot ->
+                val correctCode = snapshot.child("code").value
+
                 if (correctCode == inputCode) {
-                    // Delete the used code from FireStore
-                    adminUidRef.document("latest_code").delete()
-                        .addOnSuccessListener {
-                            onNavigateToHomePage.invoke() // Grant access
+                    // Remove code using transaction
+                    adminControlRef.child("latest_code").runTransaction(object : Transaction.Handler {
+                        override fun doTransaction(currentData: MutableData): Transaction.Result {
+                            currentData.value = null
+                            return Transaction.success(currentData)
                         }
+
+                        override fun onComplete(error: DatabaseError?, committed: Boolean, snapshot: DataSnapshot?) {
+                            if (committed) {
+                                onNavigateToHomePage()
+                            }
+                        }
+                    })
                 } else {
                     Toast.makeText(context, "Invalid 8-digit code", Toast.LENGTH_SHORT).show()
                 }

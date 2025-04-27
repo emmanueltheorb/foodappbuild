@@ -1,7 +1,5 @@
 package com.orb.bmdadmin.ui.components
 
-import androidx.annotation.DrawableRes
-import androidx.compose.foundation.Image
 import com.orb.bmdadmin.R
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -50,7 +48,8 @@ import com.orb.bmdadmin.ui.theme.AppTheme
 fun FoodListItem(
     modifier: Modifier = Modifier,
     data: Foods,
-    onValueChange: (Int?) -> Unit,
+    currentValue: String,
+    onValueChange: (String) -> Unit,
     onFoodInListClicked: () -> Unit,
     onAvailabilityChange: (Boolean) -> Unit
 ) {
@@ -69,7 +68,7 @@ fun FoodListItem(
         Spacer(modifier.width(7.dp))
         MySmallWidthTextField(
             placeholder = data.amount,
-            textValue = data.amount,
+            value = currentValue,
             onValueChange = onValueChange,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
         )
@@ -120,9 +119,6 @@ private fun FoodInListImage(
     GlideImage(
         modifier = modifier.fillMaxSize(),
         model = foodImage,
-//        ImageRequest.Builder(LocalContext.current)
-//            .data(foodImage)
-//            .build(),
         contentDescription = null,
         contentScale = ContentScale.Crop,
         loading = placeholder(R.drawable.right_ic),
@@ -136,22 +132,14 @@ private fun AvailabilityText(
     availability: Boolean,
     onAvailabilityChange: (Boolean) -> Unit
 ) {
-    var availability by remember { mutableStateOf(availability) }
-    var availabilityString by remember { mutableStateOf("") }
-    var stringColor by remember { mutableStateOf(Color.Green) }
-    if (availability) {
-        availabilityString = "Available"
-        stringColor = Color.Green
-    } else {
-        availabilityString = "Unavailable"
-        stringColor = Color.DarkGray
-    }
+    var availabilityString = if (availability) "Available" else "Unavailable"
+    val stringColor = if (availability) Color.Green else Color.DarkGray
 
     Text(
         modifier = modifier
             .widthIn(130.dp)
             .clickable(onClick = {
-                onAvailabilityChange(!availability)
+                onAvailabilityChange(availability)
             }),
         text = availabilityString,
         color = stringColor,
@@ -169,6 +157,7 @@ private fun FoodListItemPreview() {
                 foodName = "Egusi and soup",
                 price = 450
             ),
+            currentValue = "",
             onFoodInListClicked = {},
             onValueChange = {},
             onAvailabilityChange = {}

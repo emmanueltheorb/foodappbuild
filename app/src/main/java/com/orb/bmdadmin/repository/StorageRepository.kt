@@ -1,42 +1,158 @@
 package com.orb.bmdadmin.repository
 
+import com.google.firebase.database.*
+import com.google.firebase.database.ktx.database
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.storage.FirebaseStorage
 import android.net.Uri
 import android.util.Log
 import com.google.firebase.auth.ktx.auth
-import com.google.firebase.firestore.CollectionReference
-import com.google.firebase.firestore.ListenerRegistration
-import com.google.firebase.firestore.Query
-import com.google.firebase.firestore.AggregateSource
-import com.google.firebase.firestore.ktx.firestore
-import com.google.firebase.ktx.Firebase
-import com.google.firebase.storage.FirebaseStorage
 import com.orb.bmdadmin.data.Foods
 import com.orb.bmdadmin.data.OptionState
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.MutableData
+import com.google.firebase.database.Transaction
+import com.google.firebase.database.ktx.getValue
+import com.orb.bmdadmin.data.ReservedFood
 import kotlinx.coroutines.tasks.await
 import java.util.UUID
+import javax.inject.Inject
 
-const val FOODS_COLLECTION_REF = "foods"
+const val FOODS_NODE = "foods"
+const val RESERVES_NODE = "reserves"
+const val ADMINS_NODE = "admins"
+const val ID_COUNTER_NODE = "metadata/foodIdCounter"
+const val ADMIN_CONTROL_NODE = "admin_control"
+const val USERS_NODE = "users"
 
-class StorageRepository() {
+class StorageRepository @Inject constructor() {
+    val database = Firebase.database.reference
+    private val foodsRef = database.child(FOODS_NODE)
+    private val idCounterRef = database.child(ID_COUNTER_NODE)
+    private val reservesRef = database.child(RESERVES_NODE)
+    private val adminsRef = database.child(ADMINS_NODE)
+    private val adminControlRef = database.child(ADMIN_CONTROL_NODE)
+    private val usersRef = database.child(USERS_NODE)
+
     fun user() = Firebase.auth.currentUser
     fun hasUser(): Boolean = Firebase.auth.currentUser != null
-
     fun getUserId(): String = Firebase.auth.currentUser?.uid.orEmpty()
 
-    private val foodsRef: CollectionReference = Firebase
-        .firestore.collection(FOODS_COLLECTION_REF)
+    fun getFoodId(callback: (Int) -> Unit) {
+        idCounterRef.runTransaction(object : Transaction.Handler {
+            override fun doTransaction(currentData: MutableData): Transaction.Result {
+                val currentId = currentData.getValue(Int::class.java) ?: -1
+                currentData.value = currentId + 1
+                return Transaction.success(currentData)
+            }
 
-    suspend fun getFoodId(): Int {
-        return try {
-            val countQuery = foodsRef.count()
-            val snapshot = countQuery.get(AggregateSource.SERVER).await()
-            (snapshot.count).toInt().coerceAtLeast(0)
-        } catch (e: Exception) {
-            0
-        }
+            override fun onComplete(
+                error: DatabaseError?,
+                committed: Boolean,
+                data: DataSnapshot?
+            ) {
+                if (committed) {
+                    val newId = data?.getValue(Int::class.java) ?: 0
+                    callback(newId)
+                } else {
+                    callback(0)
+                }
+            }
+        })
+    }
+
+    fun addToAdminList(
+        email: String,
+        userId: String
+    ) {
+        val adminIds = hashMapOf<String, Any>(
+            "email" to email,
+            "uid" to userId
+        )
+        adminsRef.setValue(adminIds)
+    }
+
+    fun generateRandomCode(): Int {
+        return (10000000..99999999).random()
+    }
+
+    fun storeCodeInDB(code: Int) {
+        adminControlRef.child("latest_code").setValue(
+            hashMapOf(
+                "code" to code,
+                "timestamp" to ServerValue.TIMESTAMP
+            )
+        )
+    }
+
+    fun checkAdminAccess(onResult: (Boolean) -> Unit) {
+        adminControlRef.child("code_generator").child("uid")
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    onResult(snapshot.getValue(String::class.java) == getUserId())
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+
+                }
+            })
+    }
+
+    fun verifyOTP(inputCode: Int, onResult: (Boolean) -> Unit) {
+        adminControlRef.child("latest_code").addListenerForSingleValueEvent(
+            object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val storedCode = snapshot.child("code").value
+
+                    if (storedCode == inputCode) {
+                        adminControlRef.child("latest_code").runTransaction(
+                            object : Transaction.Handler {
+                                override fun doTransaction(currentData: MutableData): Transaction.Result {
+                                    currentData.value = null
+                                    return Transaction.success(currentData)
+                                }
+
+                                override fun onComplete(
+                                    error: DatabaseError?,
+                                    committed: Boolean,
+                                    currentData: DataSnapshot?
+                                ) {
+                                    if (committed) {
+                                        onResult(true)
+                                    } else {
+                                        onResult(false)
+                                    }
+                                }
+
+                            }
+                        )
+                    }
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("OTP", "Verification failed", error.toException())
+                }
+
+            }
+        )
+    }
+
+    fun getOTP(
+        otp: (Int) -> Unit
+    ) {
+        adminControlRef.child("latest_code").child("code")
+            .addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    otp(snapshot.getValue(Int::class.java) ?: 10000000)
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+
+                }
+            })
     }
 
     fun uploadImageToFirebase(
@@ -44,116 +160,56 @@ class StorageRepository() {
         onSuccess: (String) -> Unit,
         onUploadError: (String) -> Unit
     ) {
-        val storageReference =
-            FirebaseStorage.getInstance().reference.child("images/${UUID.randomUUID()}")
+        val storageReference = FirebaseStorage.getInstance().reference
+            .child("images/${UUID.randomUUID()}")
         val uploadTask = storageReference.putFile(uri!!)
 
-        uploadTask
-            .addOnSuccessListener {
-                storageReference.downloadUrl.addOnSuccessListener { downloadedUrl ->
-                    onSuccess(downloadedUrl.toString())
-                }
+        uploadTask.addOnSuccessListener {
+            storageReference.downloadUrl.addOnSuccessListener { downloadedUrl ->
+                onSuccess(downloadedUrl.toString())
             }
-            .addOnFailureListener {
-                Log.e("Upload", "Image upload failed: ${it.message}")
-                onUploadError(it.message.toString())
-            }
-    }
-
-    fun Map<String, Any?>.toOptionState(): OptionState? {
-        return try {
-            OptionState(
-                id = (this["id"] as Long).toInt(), // Long → Int
-                name = this["name"] as String,
-                price = (this["price"] as Long).toInt(),
-                amount = (this["amount"] as? Long)?.toInt(),
-                upperLimit = (this["upperLimit"] as? Long)?.toInt(),
-                lowerLimit = (this["lowerLimit"] as? Long)?.toInt(),
-                mergeGroup = (this["mergeGroup"] as? Long)?.toInt(),
-                mergeId = (this["mergeId"] as? Long)?.toInt()
-            )
-        } catch (e: Exception) {
-            null
+        }.addOnFailureListener {
+            onUploadError(it.message.toString())
         }
     }
-
 
     fun getFoodList(): Flow<Resources<List<Foods>>> = callbackFlow {
-        var snapshotStateListener: ListenerRegistration? = null
-
-        try {
-            snapshotStateListener = foodsRef
-                .orderBy("id", Query.Direction.DESCENDING)
-                .addSnapshotListener { snapshot, e ->
-                    val response = if (snapshot != null) {
-                        val foods = snapshot.documents.mapNotNull { document ->
-                            val data = document.data ?: return@mapNotNull null
-
-                            // Convert options maps to OptionState
-                            @Suppress("UNCHECKED_CAST")
-                            val options = (data["options"] as? List<Map<String, Any?>>)
-                                ?.mapNotNull { it.toOptionState() }
-
-                            Foods(
-                                id = (data["id"] as Long).toInt(), // Convert Long → Int
-                                imgUrl = data["imgUrl"] as String,
-                                foodName = data["foodName"] as String,
-                                price = (data["price"] as Long).toInt(), // Handle price
-                                availability = data["availability"] as Boolean,
-                                amount = (data["amount"] as? Long)?.toInt(), // Nullable field
-                                options = options,
-                                documentId = document.id
-                            )
-                        }
-                        Resources.Success(data = foods)
-                    } else {
-                        Resources.Error(throwable = e?.cause)
-                    }
-                    trySend(response)
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val foods = if (snapshot.exists()) {
+                    snapshot.children.mapNotNull { foodSnapshot ->
+                        foodSnapshot.getValue(Foods::class.java)?.copy(
+                            documentId = foodSnapshot.key ?: ""
+                        )
+                    }.sortedByDescending { it.id }
+                } else {
+                    emptyList()
                 }
-        } catch (e: Exception) {
-            trySend(Resources.Error(e.cause))
-            e.printStackTrace()
+                trySend(Resources.Success(foods))
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                trySend(Resources.Error(error.toException()))
+            }
         }
 
-        awaitClose {
-            snapshotStateListener?.remove()
-        }
+        foodsRef.addValueEventListener(listener)
+        awaitClose { foodsRef.removeEventListener(listener) }
     }
+
+    fun getReservesList(): Flow<Resources<List<Foods>>> = callbackFlow { }
 
     fun getFood(
         foodId: String,
         onError: (Throwable?) -> Unit,
         onSuccess: (Foods?) -> Unit
     ) {
-        foodsRef.document(foodId).get()
-            .addOnSuccessListener { document ->
-                val data = document.data ?: run {
-                    onSuccess.invoke(null)
-                    return@addOnSuccessListener
-                }
-
-                // Convert nested options maps to OptionState
-                @Suppress("UNCHECKED_CAST")
-                val options = (data["options"] as? List<Map<String, Any?>>)?.mapNotNull { map ->
-                    map.toOptionState() // Use the extension function from earlier
-                }
-
-                val food = Foods(
-                    id = (data["id"] as Long).toInt(), // Convert Long → Int
-                    imgUrl = data["imgUrl"] as String,
-                    foodName = data["foodName"] as String,
-                    price = (data["price"] as Long).toInt(), // Handle price
-                    availability = data["availability"] as Boolean,
-                    amount = (data["amount"] as? Long)?.toInt(), // Nullable field
-                    options = options,
-                    documentId = document.id
-                )
-                onSuccess.invoke(food)
+        foodsRef.child(foodId).get()
+            .addOnSuccessListener { snapshot ->
+                val food = snapshot.getValue(Foods::class.java)
+                onSuccess(food?.copy(documentId = snapshot.key ?: ""))
             }
-            .addOnFailureListener { result ->
-                onError.invoke(result.cause)
-            }
+            .addOnFailureListener { onError(it) }
     }
 
     fun addFood(
@@ -166,66 +222,22 @@ class StorageRepository() {
         options: List<OptionState>?,
         onComplete: (Boolean) -> Unit
     ) {
-        val documentId = foodsRef.document().id
-        val optionsData = options?.map { option ->
-            hashMapOf(
-                "id" to option.id,
-                "name" to option.name,
-                "price" to option.price,
-                "amount" to option.amount,
-                "upperLimit" to option.upperLimit,
-                "lowerLimit" to option.lowerLimit,
-                "mergeGroup" to option.mergeGroup,
-                "mergeId" to option.mergeId
-            )
-        }
-
-        val foodData = hashMapOf(
-            "id" to id,
-            "imgUrl" to imgUrl,
-            "foodName" to foodName,
-            "price" to price,
-            "availability" to availability,
-            "amount" to amount,
-            "options" to optionsData,
-            "documentId" to documentId
-        )
+        val newFoodRef = foodsRef.push()
+        val documentId = newFoodRef.key ?: return
 
         val food = Foods(
-            id,
-            imgUrl,
-            foodName,
-            price,
-            availability,
-            amount,
-            options,
-            documentId
+            id = id,
+            imgUrl = imgUrl,
+            foodName = foodName,
+            price = price,
+            availability = availability,
+            amount = amount,
+            options = options ?: emptyList(),
+            documentId = documentId
         )
-        foodsRef
-            .document(documentId)
-            .set(foodData)
-            .addOnCompleteListener { result ->
-                onComplete.invoke(result.isSuccessful)
-            }
-    }
 
-    fun deleteFood(foodId: String, imgUrl: String, onComplete: (Boolean) -> Unit) {
-        val storage = FirebaseStorage.getInstance()
-        val imageRef = storage.getReferenceFromUrl(imgUrl) // Get reference from URL
-
-        imageRef.delete()
-            .addOnSuccessListener {
-                // 2. Delete the Firestore document after image deletion
-                foodsRef.document(foodId)
-                    .delete()
-                    .addOnCompleteListener { task ->
-                        onComplete.invoke(task.isSuccessful)
-                    }
-            }
-            .addOnFailureListener { e ->
-                Log.e("Delete", "Image deletion failed: ${e.message}")
-                onComplete.invoke(false)
-            }
+        newFoodRef.setValue(food)
+            .addOnCompleteListener { onComplete(it.isSuccessful) }
     }
 
     fun updateFood(
@@ -239,57 +251,70 @@ class StorageRepository() {
         documentId: String,
         onResult: (Boolean) -> Unit
     ) {
-        val optionsData = options?.map { option ->
-            hashMapOf(
-                "id" to option.id,
-                "name" to option.name,
-                "price" to option.price,
-                "amount" to option.amount,
-                "upperLimit" to option.upperLimit,
-                "lowerLimit" to option.lowerLimit,
-                "mergeGroup" to option.mergeGroup,
-                "mergeId" to option.mergeId
-            )
-        }
-
-        val updateData = hashMapOf<String, Any?>(
+        val updates = hashMapOf<String, Any>(
             "id" to id,
             "imgUrl" to imgUrl,
             "foodName" to foodName,
             "price" to price,
             "availability" to availability,
-            "amount" to amount,
-            "options" to optionsData
+            "amount" to (amount ?: 0),
+            "options" to (options ?: emptyList<OptionState>())
         )
 
-        foodsRef.document(documentId)
-            .update(updateData)
-            .addOnCompleteListener {
-                onResult.invoke(it.isSuccessful)
+        foodsRef.child(documentId).updateChildren(updates)
+            .addOnCompleteListener { onResult(it.isSuccessful) }
+    }
+
+    fun deleteFood(foodId: String, imgUrl: String, onComplete: (Boolean) -> Unit) {
+        val storage = FirebaseStorage.getInstance()
+        val imageRef = storage.getReferenceFromUrl(imgUrl)
+
+        imageRef.delete()
+            .addOnSuccessListener {
+                foodsRef.child(foodId).removeValue()
+                    .addOnCompleteListener { onComplete(it.isSuccessful) }
+            }
+            .addOnFailureListener {
+                onComplete(false)
             }
     }
 
-    private fun myHashMapOf(
-        id: Pair<String, Int>,
-        imgUrl: Pair<String, String>,
-        foodName: Pair<String, String>,
-        price: Pair<String, Int>,
-        availability: Pair<String, Boolean>,
-        amount: Pair<String, Int?>,
-        options: Pair<String, List<OptionState>?>,
-    ): HashMap<String, Any?> {
-        return hashMapOf(
-            id.first to id.second,
-            imgUrl.first to imgUrl.second,
-            foodName.first to foodName.second,
-            price.first to price.second,
-            availability.first to availability.second,
-            amount.first to amount.second,
-            options.first to options.second
-        )
+    fun getReservedFoods(): Flow<Resources<List<ReservedFood>>> = callbackFlow {
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val foods = if (snapshot.exists()) {
+                    snapshot.children.mapNotNull { foodSnapshot ->
+                        foodSnapshot.getValue(ReservedFood::class.java)?.copy(
+                            documentId = foodSnapshot.key ?: ""
+                        )
+                    }.sortedByDescending { it.reservedAt }
+                } else {
+                    emptyList()
+                }
+                trySend(Resources.Success(foods))
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                trySend(Resources.Error(error.toException()))
+            }
+        }
+
+        reservesRef.addValueEventListener(listener)
+        awaitClose { reservesRef.removeEventListener(listener) }
     }
 
-    fun signOut() = Firebase.auth.signOut()
+    fun updateFoodStatus(documentId: String, newStatus: String) {
+        reservesRef.child(documentId).child("status").setValue(newStatus)
+    }
+
+    fun moveToReceived(documentId: String, status: String) {
+        reservesRef.child(documentId).child("status").setValue("received")
+        reservesRef.child(documentId).child("lastStatus").setValue(status)
+    }
+
+    fun deleteReservedFood(documentId: String) {
+        reservesRef.child(documentId).removeValue()
+    }
 }
 
 sealed class Resources<T>(

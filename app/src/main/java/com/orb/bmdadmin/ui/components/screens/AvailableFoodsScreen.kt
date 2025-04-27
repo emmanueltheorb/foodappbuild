@@ -55,29 +55,6 @@ fun AvailableFoodsScreen(
     val headerText = "BMD Foods"
     val lazyListState = rememberLazyListState()
     val scrollThreshold = 150
-    val paddingThreshold = 160
-    val density = LocalDensity.current
-//    val initialPadding = 0.dp
-//    val minPadding = 0.dp
-//
-//    val initialPaddingPx = with(density) { initialPadding.toPx() }
-//    val minPaddingPx = with(density) { initialPadding.toPx() }
-//
-//    val dynamicTopPadding by remember {
-//        derivedStateOf {
-//            if (lazyListState.firstVisibleItemIndex == 0 && lazyListState.firstVisibleItemScrollOffset <= paddingThreshold) {
-//                // Calculate progress between 0-1 based on scroll offset
-//                val scrollOffset = lazyListState.firstVisibleItemScrollOffset.toFloat()
-//                val progress = (scrollOffset / paddingThreshold).coerceIn(0f, 1f)
-//
-//                // Interpolate between initial and min padding
-//                val paddingPx = initialPaddingPx - (progress * (initialPaddingPx - minPaddingPx))
-//                with(density) { paddingPx.toDp() }
-//            } else {
-//                minPadding // Use minimum padding when not on first item
-//            }
-//        }
-//    }
 
     val isScrolledBeyondThreshold by remember {
         derivedStateOf {

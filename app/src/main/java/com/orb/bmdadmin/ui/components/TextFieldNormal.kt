@@ -2,11 +2,16 @@ package com.orb.bmdadmin.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.border
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 //import com.orb.bmdadmin.ui.components.Direction
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
@@ -18,25 +23,38 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardColors
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedCard
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.Stable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.layout.Measurable
 import androidx.compose.ui.layout.MeasureResult
 import androidx.compose.ui.layout.MeasureScope
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -326,76 +344,137 @@ fun MyLoginTextField(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MySmallWidthTextField(
     modifier: Modifier = Modifier,
+    value: String,
     placeholder: Int?,
-    textValue: Int?,
-    onValueChange: (Int?) -> Unit,
+    onValueChange: (String) -> Unit,
     keyboardOptions: KeyboardOptions = KeyboardOptions.Default
 ) {
-    val value = remember { mutableStateOf(textValue) }
-    
-    OutlinedCard(
-        modifier = Modifier.padding(3.dp),
-        shape = RoundedCornerShape(8.dp),
-        border = BorderStroke(width = 2.5.dp, color = MaterialTheme.colorScheme.onBackground),
-        colors = CardColors(
-            containerColor = MaterialTheme.colorScheme.background,
-            contentColor = MaterialTheme.colorScheme.onBackground,
-            disabledContentColor = MaterialTheme.colorScheme.onBackground,
-            disabledContainerColor = MaterialTheme.colorScheme.background,
-        )
-    ) {
-        BasicTextField(
-            value = textValue?.toString() ?: "",
-            onValueChange = {
-                if (!it.isEmpty()) {
-                    value.value = it.toInt()
-                    onValueChange(it.toInt())
-                } else {
-                    value.value = null
-                    onValueChange(null)
-                }
-            },
-            modifier = modifier
-                .wrapContentSize()
-                .height(35.dp)
-                .width(50.dp)
-                .defaultMinSize(minWidth = 10.dp, minHeight = 10.dp),
-            textStyle = TextStyle(
-                color = MaterialTheme.colorScheme.onBackground,
-                fontFamily = RobotoFontFamily,
-                fontSize = 24.sp
-            ),
-            maxLines = 1,
-            cursorBrush = SolidColor(
-                MaterialTheme.colorScheme.onBackground
-            ),
-            decorationBox = { innerTextField ->
-                Box {
-                    if (value.value == null) {
+    var focused by remember { mutableStateOf(false) }
+    val interactionSource = remember { MutableInteractionSource() }
+
+    BasicTextField(
+        value = value,
+        onValueChange = onValueChange,
+        modifier = modifier
+            .onFocusChanged { focused = it.isFocused }
+            .heightIn(min = 35.dp)
+            .width(50.dp),
+        textStyle = TextStyle(
+            color = MaterialTheme.colorScheme.onBackground,
+            fontFamily = RobotoFontFamily,
+            fontSize = 24.sp
+        ),
+        maxLines = 1,
+        cursorBrush = if (focused) { // Show cursor only when focused
+            SolidColor(MaterialTheme.colorScheme.onBackground)
+        } else {
+            SolidColor(Color.Transparent)
+        },
+        keyboardOptions = keyboardOptions,
+        decorationBox = { innerTextField ->
+            TextFieldDefaults.OutlinedTextFieldDecorationBox(
+                value = value,
+                innerTextField = innerTextField,
+                enabled = true,
+                singleLine = true,
+                visualTransformation = VisualTransformation.None,
+                interactionSource = interactionSource, // Added interaction source
+                placeholder = {
+                    if (value.isEmpty() && !focused && placeholder != null) {
                         Text(
-                            modifier = modifier
-                                .padding(3.dp)
-                                .align(Alignment.Center),
                             text = placeholder.toString(),
                             style = TextStyle(
-                                color = MaterialTheme.colorScheme.onBackground,
-                                fontFamily = RobotoFontFamily,
-                                fontSize = 24.sp
-                            ),
-                            color = MaterialTheme.colorScheme.onBackground,
-                            maxLines = 1,
-                            textAlign = TextAlign.Center,
-                            overflow = TextOverflow.Ellipsis
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                                fontSize = 24.sp,
+                                fontFamily = RobotoFontFamily
+                            )
                         )
                     }
-                    innerTextField()
-                }
-            },
-            keyboardOptions = keyboardOptions
-        )
+                },
+                label = {
+                    placeholder?.let {
+                        Text(
+                            text = it.toString(),
+                            style = MaterialTheme.typography.bodySmall.copy(
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                        )
+                    }
+                },
+                colors = TextFieldDefaults.outlinedTextFieldColors(
+                    containerColor = MaterialTheme.colorScheme.background,
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent
+                ),
+                // Custom border container
+                container = {
+                    Box(
+                        Modifier
+                            .border(
+                                BorderStroke(2.5.dp, MaterialTheme.colorScheme.onBackground),
+                                RoundedCornerShape(8.dp)
+                            )
+                    )
+                },
+                contentPadding = PaddingValues(horizontal = 8.dp, vertical = 4.dp)
+            )
+        }
+    )
+}
+
+@Composable
+fun OtpTextField(
+    otpLength: Int = 8,
+    onOtpComplete: (String) -> Unit = {}
+) {
+    // Holds the current OTP digits in a mutable list.
+    val otpValues = remember { mutableStateListOf(*Array(otpLength) { "" }) }
+    // Create a list of focus requesters for each OTP field.
+    val focusRequesters = List(otpLength) { FocusRequester() }
+
+    Row(
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        modifier = Modifier.padding(16.dp)
+    ) {
+        (0 until otpLength).forEach { index ->
+            OutlinedTextField(
+                value = otpValues[index],
+                onValueChange = { newValue ->
+                    // Allow only one digit and ensure it's a number.
+                    if (newValue.length <= 1 && newValue.all { it.isDigit() }) {
+                        otpValues[index] = newValue
+                        // Move focus to the next field if current field is not empty.
+                        if (newValue.isNotEmpty() && index < otpLength - 1) {
+                            focusRequesters[index + 1].requestFocus()
+                        }
+                        // If all fields are filled, trigger the callback.
+                        if (otpValues.joinToString("").length == otpLength) {
+                            onOtpComplete(otpValues.joinToString(""))
+                        }
+                    }
+                },
+                modifier = Modifier
+                    .width(25.dp)
+                    .focusRequester(focusRequesters[index])
+                    // Handle key events to support deletion and moving focus back.
+                    .onKeyEvent { keyEvent ->
+                        if (keyEvent.type == KeyEventType.KeyDown &&
+                            keyEvent.key == Key.Backspace &&
+                            otpValues[index].isEmpty() &&
+                            index > 0) {
+                            focusRequesters[index - 1].requestFocus()
+                        }
+                        false
+                    },
+                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+            )
+        }
     }
 }
 
@@ -456,18 +535,3 @@ fun MySmallWidthTextField(
 //    )
 //    return 2.dp
 //}
-
-@Preview(showBackground = true, showSystemUi = true)
-@Composable
-private fun MyLoginTextFieldPreview() {
-    Box(
-        Modifier.fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        MySmallWidthTextField(
-            placeholder = 450,
-            textValue = null,
-            onValueChange = {}
-        )
-    }
-}

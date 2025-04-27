@@ -12,10 +12,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.orb.bmdadmin.data.FoodItemState
 import com.orb.bmdadmin.data.ReservedFoodsScreenState
 import com.orb.bmdadmin.ui.components.ReservedFoodItem
+import com.orb.bmdadmin.ui.theme.AppTheme
 
 @Composable
 fun ReservedFoodsScreen(
@@ -75,5 +77,13 @@ private fun FoodsListColumn(
                 onReserveFoodClicked = onFoodItemClicked
             )
         }
+    }
+}
+
+@Preview(showBackground = true, showSystemUi = true)
+@Composable
+fun ReservedFoodsScreenPreview() {
+    AppTheme {
+        ReservedFoodsScreen(onFoodItemClicked = {})
     }
 }

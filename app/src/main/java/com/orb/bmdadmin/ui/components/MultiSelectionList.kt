@@ -36,6 +36,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.window.Popup
+import com.orb.bmdadmin.ui.theme.Black1
+import com.orb.bmdadmin.ui.theme.White
 
 class MultiSelectionState(initialIsMultiSelectionModeEnabled: Boolean = false) {
     var isMultiSelectionModeEnabled by mutableStateOf(initialIsMultiSelectionModeEnabled)
@@ -141,24 +143,21 @@ fun PopUpForMergeAndRemove(
     firstString: String = "Merge",
     secondString: String = "Remove",
     onMergeClicked: () -> Unit,
-    onRemoveClicked: () -> Unit
+    onRemoveClicked: () -> Unit,
+    onDismissRequest: () -> Unit
 ) {
-    var isVisible by remember {
-        mutableStateOf(false)
-    }
-
     Popup(
         alignment = Alignment.BottomCenter,
-        offset = IntOffset(0, 50),
-        onDismissRequest = { isVisible }
+        offset = IntOffset(0, 80),
+        onDismissRequest = onDismissRequest
     ) {
         Surface(
             modifier
                 .wrapContentSize()
                 .padding(5.dp),
             shape = RoundedCornerShape(8.dp),
-            color = MaterialTheme.colorScheme.background,
-            contentColor = MaterialTheme.colorScheme.onBackground,
+            color = White,
+            contentColor = Black1,
             shadowElevation = 3.dp
         ) {
             Row(

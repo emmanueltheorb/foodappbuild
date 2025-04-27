@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -21,32 +22,37 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.orb.bmdadmin.data.FoodItemState
 import com.orb.bmdadmin.data.OptionReserved
+import com.orb.bmdadmin.data.ReservedFood
 import com.orb.bmdadmin.ui.components.FoodImage
+import com.orb.bmdadmin.ui.components.FoodImageUrl
 import com.orb.bmdadmin.ui.components.ItemDescription
 import com.orb.bmdadmin.ui.components.ReservedBottomBar
 import com.orb.bmdadmin.ui.components.sections.NullOptions
 import com.orb.bmdadmin.ui.components.sections.PriceView
 import com.orb.bmdadmin.ui.components.sections.Surface
+import kotlin.code
 
 @Composable
 fun ReservedScreen(
     modifier: Modifier = Modifier,
-    data: FoodItemState,
-    price: Int,
-    quantity: Int,
-    optionsReserved: MutableList<OptionReserved>
+    food: ReservedFood,
+    imgUrl: String
 ) {
     Box(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .systemBarsPadding(),
         contentAlignment = Alignment.BottomCenter
     ) {
         ScreenContent(
             modifier = modifier.fillMaxSize(),
-            data = data, price =  price, optionsReserved = optionsReserved
+            food = food.copy(imgUrl = imgUrl)
         )
         ReservedBottomBar(
-            modifier = modifier.navigationBarsPadding(),
-            quantity = quantity
+            quantity = food.quantity,
+            address = food.address,
+            phoneNumber = food.phoneNumber,
+            code = food.code
         )
     }
 }
@@ -54,9 +60,7 @@ fun ReservedScreen(
 @Composable
 private fun ScreenContent(
     modifier: Modifier = Modifier,
-    data: FoodItemState,
-    price: Int,
-    optionsReserved: MutableList<OptionReserved>
+    food: ReservedFood
 ) {
     val scrollState = rememberScrollState()
 
@@ -65,16 +69,15 @@ private fun ScreenContent(
             .verticalScroll(scrollState)
             .background(color = MaterialTheme.colorScheme.background)
             .fillMaxSize()
-            .padding(top = 50.dp),
+            .padding(top = 10.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
-        AvailableFoodItemReserved(data = data, price = price)
-        OptionsCheck(data = data, optionsReserved = optionsReserved)
+        AvailableFoodItemReserved(food = food)
+        Options(optionsReserved = food.options)
         Spacer(
             modifier = modifier
-                .padding(bottom = 56.dp)
+                .padding(bottom = 106.dp)
                 .height(8.dp)
-                .navigationBarsPadding()
         )
     }
 }
@@ -82,38 +85,23 @@ private fun ScreenContent(
 @Composable
 private fun AvailableFoodItemReserved(
     modifier: Modifier = Modifier,
-    data: FoodItemState,
-    price: Int
+    food: ReservedFood
 ) {
     Column(
+        modifier = modifier.padding(horizontal = 18.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        FoodImage(
-            foodImage = data.img
+        FoodImageUrl(
+            foodImage = food.imgUrl
         )
-        ItemDescription(name = data.foodName, price = price.toString())
-    }
-}
-
-@Composable
-private fun OptionsCheck(
-    modifier: Modifier = Modifier,
-    data: FoodItemState,
-    optionsReserved: MutableList<OptionReserved>
-) {
-    if (data.options == null) {
-        NullOptions(data = data)
-    } else {
-        Options(
-            optionsReserved = optionsReserved
-        )
+        ItemDescription(name = food.name, price = food.price.toString())
     }
 }
 
 @Composable
 private fun Options(
     modifier: Modifier = Modifier,
-    optionsReserved: MutableList<OptionReserved>
+    optionsReserved: List<OptionReserved>
 ) {
     Column(
         modifier = modifier.fillMaxSize(),
@@ -127,7 +115,7 @@ private fun Options(
 @Composable
 private fun ReservedOptions(
     modifier: Modifier = Modifier,
-    optionsReserved: MutableList<OptionReserved>
+    optionsReserved: List<OptionReserved>
 ) {
     for (option in optionsReserved) {
         if (option.amount == null) {

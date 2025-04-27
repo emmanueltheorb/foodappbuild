@@ -13,21 +13,30 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(
     modifier: Modifier = Modifier,
-    loginViewModel: LoginViewModel? = null,
+    loginViewModel: LoginViewModel = hiltViewModel(),
     onNavToHomePage: () -> Unit,
     onNavToLoginPage: () -> Unit,
+    onNavToOtpPage: () -> Unit
 ) {
-    val loginScreenState = loginViewModel?.loginScreenState
-    val isError = loginScreenState?.loginError != null
+    val loginScreenState = loginViewModel.loginScreenState
+    val isError = loginScreenState.loginError != null
     val context = LocalContext.current
 
-    LaunchedEffect(loginViewModel?.hasUser) {
-        if (loginViewModel?.hasUser == true) {
-            onNavToHomePage()
+    LaunchedEffect(loginViewModel.hasUser) {
+        if (loginViewModel.hasUser == true) {
+//            loginViewModel.checkIfUserIsAdmin {
+//                if (it) {
+                    onNavToHomePage()
+//                } else {
+//                    onNavToOtpPage
+//                }
+//            }
         } else {
             onNavToLoginPage()
         }

@@ -73,12 +73,11 @@ import java.net.URLDecoder
 fun AddFoodItemScreen(
     modifier: Modifier = Modifier,
     foodForEdit: Foods? = null,
-    imgUrl: String,
+    imgUrl: String = "",
     onNavigate: () -> Unit
 ) {
     val addFoodViewModel: AddFoodViewModel =
         viewModel(factory = AddFoodViewModelFactory(foodForEdit))
-    val decodedImgUrl = URLDecoder.decode(addFoodViewModel.imageUrl, "UTF-8")
 
     val addFoodScreenState = addFoodViewModel.addFoodScreenState
     val scope = rememberCoroutineScope()
@@ -198,9 +197,13 @@ fun AddFoodItemScreen(
             addFoodViewModel.updateFoodState(foodForEdit.documentId)
             onNavigate.invoke()
         } else {
-            scope.launch {
-                addFoodViewModel.addFoodState()
-                onNavigate.invoke()
+            if (addFoodViewModel.foodList.last().imgUri.value != null) {
+                scope.launch {
+                    addFoodViewModel.addFoodState()
+                    onNavigate.invoke()
+                }
+            } else {
+                onNavigate()
             }
         }
     }
@@ -211,8 +214,7 @@ fun AddFoodItemScreen(
                 hostState = snackBarHostState,
                 snackbar = { snackBarData ->
                     MySnackBar(
-                        snackBarData = snackBarData,
-                        isSuccess = true
+                        snackBarData = snackBarData
                     )
                 }
             )
@@ -289,7 +291,10 @@ fun AddFoodItemScreen(
                     onSelectedItemsInBox = onSelectedItemsInBox,
                     onAddClicked = onAddClicked,
                     onRightClicked = onRightClicked,
-                    onEditClicked = onEditClicked
+                    onEditClicked = onEditClicked,
+                    onYesClicked = {
+                        addFoodViewModel.addNewOptionInput()
+                    }
                 )
             }
             BoxForCheckButton(onTickClicked = onDoneClicked)

@@ -4,6 +4,8 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.gms.google.services)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.google.dagger.hilt.android)
+    kotlin("kapt")
 }
 
 android {
@@ -30,11 +32,11 @@ android {
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions {
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
     buildFeatures {
         compose = true
@@ -54,7 +56,9 @@ dependencies {
     implementation(libs.compose.constraint.layout)
     implementation(libs.firebase.database)
     implementation(libs.firebase.auth)
-    implementation(libs.firebase.firestore)
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
     implementation(libs.firebase.storage)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
@@ -70,4 +74,13 @@ dependencies {
     implementation (libs.kotlinx.coroutines.android)
     implementation(libs.coil.compose)
     implementation(libs.compose)
+    implementation (libs.hilt.android)
+    kapt (libs.hilt.compiler)
+    implementation (libs.androidx.hilt.navigation.compose)
+    implementation (libs.accompanist.swiperefresh)
+}
+
+// Allow references to generated code
+kapt {
+    correctErrorTypes = true
 }

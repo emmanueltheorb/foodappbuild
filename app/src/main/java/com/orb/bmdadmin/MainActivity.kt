@@ -1,5 +1,6 @@
 package com.orb.bmdadmin
 
+import android.content.res.Configuration
 import android.os.Bundle
 import android.view.View
 import android.view.WindowManager
@@ -14,13 +15,16 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.orb.bmdadmin.login.LoginViewModel
 import com.orb.bmdadmin.navigation.MyNavigationHost
-import com.orb.bmdadmin.navigation.Navigation
 import com.orb.bmdadmin.ui.components.screens.AddFoodItemScreen
 import com.orb.bmdadmin.ui.components.screens.AvailableFoodsScreen
 import com.orb.bmdadmin.ui.components.screens.FoodListScreen
 import com.orb.bmdadmin.ui.components.screens.ReservingScreen
+import com.orb.bmdadmin.ui.components.SwipeToDeleteList
+import com.orb.bmdadmin.ui.components.screens.FoodOrdersScreen
 import com.orb.bmdadmin.ui.theme.AppTheme
+import dagger.hilt.android.AndroidEntryPoint
 
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -29,12 +33,14 @@ class MainActivity : ComponentActivity() {
         window.statusBarColor = Color.Transparent.toArgb()
         window.navigationBarColor = Color.Transparent.toArgb()
 
+        val isDarkMode = resources.configuration.uiMode and
+                Configuration.UI_MODE_NIGHT_MASK == Configuration.UI_MODE_NIGHT_YES
+
         WindowCompat.getInsetsController(window, window.decorView).apply {
-            isAppearanceLightStatusBars = true
-            isAppearanceLightNavigationBars = true
+            isAppearanceLightStatusBars = !isDarkMode
+            isAppearanceLightNavigationBars = !isDarkMode
         }
         setContent {
-            val loginViewModel = viewModel(modelClass = LoginViewModel::class.java)
             AppTheme {
 //                    AvailableFoodsScreen(
 //                        onSearchButtonClicked = {},
@@ -45,18 +51,23 @@ class MainActivity : ComponentActivity() {
 //                        onDecrementClicked = {},
 //                        onIncrementClicked = {}
 //                    )
-                    ReservingScreen()
+//                    ReservingScreen()
 //                FoodListScreen(
 //                    navToAddFoodScreen = {},
-//                    onEditFoodClicked = {},
+//                    onEditFoodClicked = { f, s ->
+//
+//                    },
 //                    onSearchButtonClicked = {}
 //                )
 //                AddFoodItemScreen(
 //                    onNavigate = {}
 //                )
 //                DynamicItemListWithInteraction()
-//                Navigation(loginViewModel = loginViewModel)
-//                MyNavigationHost(loginViewModel = loginViewModel)
+                MyNavigationHost()
+//                SwipeToDeleteList()
+//                FoodOrdersScreen { f, s ->
+//
+//                }
             }
         }
     }

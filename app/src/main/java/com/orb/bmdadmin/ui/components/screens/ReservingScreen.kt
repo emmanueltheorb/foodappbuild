@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -56,7 +57,9 @@ fun ReservingScreen(
     }
 
     Box(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier
+            .fillMaxSize()
+            .systemBarsPadding(),
         contentAlignment = Alignment.BottomCenter
     ) {
         ScreenContent(
@@ -71,7 +74,6 @@ fun ReservingScreen(
             }
         )
         QuantityBottomBar(
-            modifier = modifier.navigationBarsPadding(),
             price = totalPrice,
             itemPrice = data.price,
             upperLimit = amount,
@@ -95,7 +97,7 @@ private fun ScreenContent(
             .verticalScroll(scrollState)
             .background(color = MaterialTheme.colorScheme.background)
             .fillMaxSize()
-            .padding(top = 50.dp),
+            .padding(top = 10.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp)
     ) {
         AvailableFoodItem(
@@ -123,7 +125,7 @@ private fun ScreenContent(
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun ReservingScreenPreview() {
-    AppTheme(darkTheme = true) {
+    AppTheme {
         ReservingScreen()
     }
 }

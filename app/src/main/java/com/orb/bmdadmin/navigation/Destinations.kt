@@ -1,6 +1,7 @@
 package com.orb.bmdadmin.navigation
 
 import com.orb.bmdadmin.data.Foods
+import com.orb.bmdadmin.data.ReservedFood
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -36,6 +37,18 @@ sealed class Dest {
 
     @Serializable
     data object FoodListScreen: Dest()
+
+    @Serializable
+    data object OrdersScreen: Dest()
+
+    @Serializable
+    data class ReservedScreen(
+        val food: ReservedFood,
+        val imgUrl: String
+    ): Dest()
+
+    @Serializable
+    data object ProfileScreen: Dest()
 
     @Serializable
     data class AddFoodScreen(

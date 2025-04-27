@@ -2,6 +2,8 @@ package com.orb.bmdadmin.data
 
 import android.net.Uri
 import androidx.annotation.DrawableRes
+import androidx.annotation.Keep
+import com.google.firebase.database.IgnoreExtraProperties
 import com.orb.bmdadmin.R
 import kotlinx.serialization.Serializable
 
@@ -11,6 +13,7 @@ sealed class FoodImage {
     data class Remote(val url: String) : FoodImage()
 }
 
+@IgnoreExtraProperties
 @Serializable
 data class Foods(
     val id: Int = 0,
@@ -21,6 +24,24 @@ data class Foods(
     val amount: Int? = null,
     val options: List<OptionState>? = emptyList<OptionState>(),
     val documentId: String = ""
+)
+
+@IgnoreExtraProperties
+@Serializable
+data class ReservedFood(
+    val name: String = "",
+    val imgUrl: String = "",
+    val price: Int = 0,
+    val quantity: Int = 0,
+    val options: List<OptionReserved> = emptyList<OptionReserved>(),
+    val code: String = "00000000",
+    val address: String = "",
+    val phoneNumber: String = "",
+    val documentId: String = "",
+    val status: String = "", // Can be: reserved, ordered, received
+    val lastStatus: String = "",
+    val reservedAt: Long = 0L,
+    val userId: String = ""
 )
 
 data class FoodItemStateUrl(
@@ -43,25 +64,206 @@ data class FoodItemState(
     val options: List<OptionState>?
 )
 
+@Keep
+@IgnoreExtraProperties
 @Serializable
 data class OptionState(
-    val id: Int,
-    val name: String,
-    val price: Int,
-    val amount: Int?,
-    val upperLimit: Int?,
-    val lowerLimit: Int?,
+    val id: Int = 0,
+    val name: String = "",
+    val price: Int = 0,
+    val amount: Int? = null,
+    val upperLimit: Int? = null,
+    val lowerLimit: Int? = null,
     val mergeGroup: Int? = null,
     val mergeId: Int? = null
 )
 
+@Keep
+@IgnoreExtraProperties
+@Serializable
 data class OptionReserved(
-    val id: Int,
-    val name: String,
-    val amount: Int?,
-    val price: Int
+    val id: Int = 0,
+    val name: String = "",
+    val amount: Int? = null,
+    val price: Int = 0
 )
 
+data class DropDownItem(
+    val text: String,
+    val onClick: () -> Unit
+)
+
+val ReservedFoods = listOf<ReservedFood>(
+    ReservedFood(
+        imgUrl = "",
+        name = "Eba and soup",
+        price = 2600,
+        quantity = 1,
+        options = listOf(
+            OptionReserved(
+                id = 0,
+                name = "Fufu",
+                amount = 3,
+                price = 1200
+            ),
+            OptionReserved(
+                id = 0,
+                name = "Eba",
+                amount = 3,
+                price = 1050
+            )
+        ),
+        code = "42311165",
+        address = "Transformer Street, Old emede road",
+        phoneNumber = "08125676654",
+        documentId = ""
+    ),
+    ReservedFood(
+        imgUrl = "",
+        name = "Sausage roll",
+        price = 2600,
+        quantity = 1,
+        options = listOf(
+            OptionReserved(
+                id = 0,
+                name = "Fufu",
+                amount = 3,
+                price = 1200
+            ),
+            OptionReserved(
+                id = 0,
+                name = "Eba",
+                amount = 3,
+                price = 1050
+            )
+        ),
+        code = "45678222",
+        address = "Transformer Street, Old emede road",
+        phoneNumber = "08125676654",
+        documentId = ""
+    ),
+    ReservedFood(
+        imgUrl = "",
+        name = "Latte",
+        price = 2600,
+        quantity = 1,
+        options = listOf(
+            OptionReserved(
+                id = 0,
+                name = "Fufu",
+                amount = 3,
+                price = 1200
+            ),
+            OptionReserved(
+                id = 0,
+                name = "Eba",
+                amount = 3,
+                price = 1050
+            )
+        ),
+        code = "99071423",
+        address = "Transformer Street, Old emede road",
+        phoneNumber = "08125676654",
+        documentId = ""
+    ),
+    ReservedFood(
+        imgUrl = "",
+            name = "Santana",
+        price = 2600,
+        quantity = 1,
+        options = listOf(
+            OptionReserved(
+                id = 0,
+                name = "Fufu",
+                amount = 3,
+                price = 1200
+            ),
+            OptionReserved(
+                id = 0,
+                name = "Eba",
+                amount = 3,
+                price = 1050
+            )
+        ),
+        code = "78653349",
+        address = "Transformer Street, Old emede road",
+        phoneNumber = "08125676654",
+        documentId = ""
+    ),
+    ReservedFood(
+        imgUrl = "",
+        name = "Eba and soup",
+        price = 2600,
+        quantity = 1,
+        options = listOf(
+            OptionReserved(
+                id = 0,
+                name = "Fufu",
+                amount = 3,
+                price = 1200
+            ),
+            OptionReserved(
+                id = 0,
+                name = "Eba",
+                amount = 3,
+                price = 1050
+            )
+        ),
+        code = "12340987",
+        address = "Transformer Street, Old emede road",
+        phoneNumber = "08125676654",
+        documentId = ""
+    ),
+    ReservedFood(
+        imgUrl = "",
+        name = "Pizza",
+        price = 2600,
+        quantity = 1,
+        options = listOf(
+            OptionReserved(
+                id = 0,
+                name = "Fufu",
+                amount = 3,
+                price = 1200
+            ),
+            OptionReserved(
+                id = 0,
+                name = "Eba",
+                amount = 3,
+                price = 1050
+            )
+        ),
+        code = "22340987",
+        address = "Transformer Street, Old emede road",
+        phoneNumber = "08125676654",
+        documentId = ""
+    )
+)
+
+val ReservedFoodExample = ReservedFood(
+    imgUrl = "",
+    name = "Eba and soup",
+    price = 2600,
+    quantity = 1,
+    options = listOf(
+        OptionReserved(
+            id = 0,
+            name = "Fufu",
+            amount = 3,
+            price = 1200
+        ),
+        OptionReserved(
+            id = 0,
+            name = "Eba",
+            amount = 3,
+            price = 1050
+        )
+    ),
+    code = "12340987",
+    address = "Transformer Street, Old emede road",
+    phoneNumber = "08125676654",
+    documentId = ""
+)
 
 val FoodItemsData = mutableListOf(
     FoodItemState(

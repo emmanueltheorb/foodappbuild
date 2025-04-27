@@ -65,6 +65,7 @@ import com.orb.bmdadmin.ui.components.MultiSelectionState
 import com.orb.bmdadmin.ui.components.MyTextFieldWithCallback
 import com.orb.bmdadmin.ui.components.PopUpForDelete
 import com.orb.bmdadmin.ui.components.PopUpForMergeAndRemove
+import com.orb.bmdadmin.ui.components.sections.TextButton
 import com.orb.bmdadmin.ui.theme.RobotoFontFamily
 
 @Composable
@@ -92,7 +93,8 @@ fun OptionInputSection(
     onSelectedItemsInBox: (List<OptionState>) -> Unit,
     onAddClicked: () -> Unit,
     onRightClicked: () -> Unit,
-    onEditClicked: () -> Unit
+    onEditClicked: () -> Unit,
+    onYesClicked: () -> Unit
 ) {
     OptionCheck(
         onIncreaseButtonClicked = onIncreaseButtonClicked,
@@ -117,7 +119,8 @@ fun OptionInputSection(
         onSelectedItemsInBox = onSelectedItemsInBox,
         onAddClicked = onAddClicked,
         onRightClicked = onRightClicked,
-        onEditClicked = onEditClicked
+        onEditClicked = onEditClicked,
+        onYesClicked = onYesClicked
     )
 }
 
@@ -146,11 +149,13 @@ fun OptionCheck(
     onSelectedItemsInBox: (List<OptionState>) -> Unit,
     onAddClicked: () -> Unit,
     onRightClicked: () -> Unit,
-    onEditClicked: () -> Unit
+    onEditClicked: () -> Unit,
+    onYesClicked: () -> Unit
 ) {
     var signal1 by remember { mutableStateOf(false) }
     val onButtonClicked = {
         signal1 = true
+        onYesClicked()
     }
 
     if (signal1 == false) {
@@ -304,12 +309,9 @@ private fun OptionsInput(
     optionInputs: SnapshotStateList<AddFoodViewModel.OptionStateInput>
 ) {
     val scrollState = rememberScrollState()
+
     Column(
-        modifier
-            .padding(horizontal = 18.dp)
-            .fillMaxSize()
-            .background(color = MaterialTheme.colorScheme.background)
-            .verticalScroll(scrollState),
+        modifier.padding(horizontal = 18.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -325,16 +327,26 @@ private fun OptionsInput(
                 onClick = onFirstNextClicked
             )
         }
-        optionInputs.forEach { input ->
-            OptionColumn(
-                input = input
+        Column(
+            modifier
+                .padding(horizontal = 18.dp)
+                .fillMaxSize()
+                .background(color = MaterialTheme.colorScheme.background)
+                .verticalScroll(scrollState),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            optionInputs.forEach { input ->
+                OptionColumn(
+                    input = input
+                )
+            }
+            ButtonRow(
+                onIncreaseButtonClicked = onIncreaseButtonClicked,
+                onDecreaseButtonClicked = onDecreaseButtonClicked
             )
+            Spacer(modifier = modifier.height(50.dp))
         }
-        ButtonRow(
-            onIncreaseButtonClicked = onIncreaseButtonClicked,
-            onDecreaseButtonClicked = onDecreaseButtonClicked
-        )
-        Spacer(modifier = modifier.height(50.dp))
     }
 }
 
@@ -486,7 +498,8 @@ fun OptionsInMultiSelectionList(
     if (signalForPopUp == 2) {
         PopUpForMergeAndRemove(
             onMergeClicked = onMergeClicked,
-            onRemoveClicked = onRemoveClicked
+            onRemoveClicked = onRemoveClicked,
+            onDismissRequest = {}
         )
     }
     if (signalForPopUp == -1) {
@@ -663,8 +676,8 @@ fun OptionsPreviewSection(
             )
         }
         OptionsSection(
-            modifier
-                .verticalScroll(scrollState),
+//            modifier
+//                .verticalScroll(scrollState),
             options = options.toMutableList(),
             onPriceChange = { key, price ->
 
